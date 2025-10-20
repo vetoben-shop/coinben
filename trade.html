@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,maximum-scale=1"
+    />
+    <title>Coinben Bot — Trade Bot (Settings & Ops)</title>
+    <!-- UPDATED: link to Trade.css -->
+    <link rel="stylesheet" href="./css/trade.css" />
+  </head>
+  <body>
+    <!-- ============================ App Canvas ============================ -->
+    <!-- NEW: wrap everything with .trade-app (fixed 600x700) -->
+    <div class="trade-app scrollable">
+      <!-- ============================ Header / Nav ============================ -->
+      <header class="app-header">
+        <div class="app-title">Coinben Bot</div>
+        <nav class="linkbar">
+          <a href="./index.html">Dashboard</a>
+          <a href="./risk.html">Risk Bot</a>
+          <a class="active" href="./trade.html">Trade Bot</a>
+          <a href="./future4.html">Page 4</a>
+          <a href="./future5.html">Page 5</a>
+        </nav>
+      </header>
+
+      <!-- ============================ Connection ============================ -->
+      <section class="panel">
+        <h3 class="panel-title">Connection</h3>
+
+        <div class="grid-2">
+          <div class="field">
+            <label class="label" for="baseUrl">Server URL</label>
+            <!-- keep id -->
+            <input
+              class="input"
+              id="baseUrl"
+              type="text"
+              value="http://127.0.0.1:8788"
+            />
+          </div>
+
+          <div class="field">
+            <label class="label">Account & Ping</label>
+            <div class="btn-row">
+              <button class="btn btn-primary" id="pingBtn">
+                Check Connection
+              </button>
+              <button class="btn" id="balSpotBtn">Spot Balance</button>
+              <button class="btn" id="balFutBtn">Futures Balance</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="log note" id="connLog" aria-live="polite"></div>
+      </section>
+
+      <!-- ============================ Common Settings ============================ -->
+      <section class="panel">
+        <h3 class="panel-title">Common Settings</h3>
+
+        <div class="grid-2">
+          <div class="field">
+            <label class="label" for="symbol">Symbol (e.g., BTCUSDT)</label>
+            <input class="input" id="symbol" type="text" value="BTCUSDT" />
+          </div>
+
+          <div class="field">
+            <label class="label" for="amt">Amount / Value</label>
+            <div class="inline">
+              <input
+                class="input"
+                id="amt"
+                type="number"
+                step="0.0001"
+                value="10"
+              />
+              <select class="select" id="amtType">
+                <option value="USDT" selected>USDT (Value)</option>
+                <option value="COIN">COIN (Qty)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="label" for="leverage">Leverage (Futures)</label>
+            <input
+              class="input"
+              id="leverage"
+              type="number"
+              step="1"
+              min="1"
+              max="125"
+              value="3"
+            />
+          </div>
+
+          <div class="field">
+            <label class="label" for="posMode">Position Mode</label>
+            <select class="select" id="posMode">
+              <option value="cross">Cross</option>
+              <option value="isolated" selected>Isolated</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid-3 mt-12">
+          <div class="field">
+            <label class="label" for="tpPct">TP (%)</label>
+            <input
+              class="input"
+              id="tpPct"
+              type="number"
+              step="0.1"
+              value="0.8"
+            />
+          </div>
+          <div class="field">
+            <label class="label" for="slPct">SL (%)</label>
+            <input
+              class="input"
+              id="slPct"
+              type="number"
+              step="0.1"
+              value="0.6"
+            />
+          </div>
+          <div class="field">
+            <label class="label" for="safeMode">Safety Mode</label>
+            <select class="select" id="safeMode">
+              <option value="off" selected>Off</option>
+              <option value="on">On (restrict orders)</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================ Futures: Market ============================ -->
+      <section class="panel">
+        <div class="panel-head">
+          <h3 class="panel-title">Futures — Market</h3>
+        </div>
+        <div class="badges mb-8">
+          <span class="badge">productType: <b>USDT-FUTURES</b></span>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-success" id="futLongBtn">
+            Enter Long (BUY)
+          </button>
+          <button class="btn btn-danger" id="futShortBtn">
+            Enter Short (SELL)
+          </button>
+          <button class="btn" id="futCloseLongBtn">Close Long</button>
+          <button class="btn" id="futCloseShortBtn">Close Short</button>
+          <button class="btn btn-warning" id="futCloseAllBtn">Close All</button>
+        </div>
+
+        <div class="log note mt-12" id="futLog" aria-live="polite"></div>
+      </section>
+
+      <!-- ============================ Spot: Market ============================ -->
+      <section class="panel">
+        <div class="panel-head">
+          <h3 class="panel-title">Spot — Market</h3>
+        </div>
+        <div class="badges mb-8">
+          <span class="badge">Pair: <b>e.g., BTCUSDT</b></span>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-success" id="spotBuyBtn">Buy (Spot)</button>
+          <button class="btn btn-warning" id="spotSellAllBtn">
+            Sell All (Spot)
+          </button>
+        </div>
+
+        <div class="log note mt-12" id="spotLog" aria-live="polite"></div>
+      </section>
+
+      <!-- ============================ Private Call (Proxy) ============================ -->
+      <section class="panel">
+        <div class="panel-head">
+          <h3 class="panel-title">Direct Call (Proxy)</h3>
+        </div>
+        <div class="badges mb-8">
+          <span class="badge">/bitget/private-call</span>
+        </div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label class="label" for="pcMethod">Method</label>
+            <select class="select" id="pcMethod">
+              <option value="GET">GET</option>
+              <option value="POST" selected>POST</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="label" for="pcPath">Bitget Endpoint Path</label>
+            <input
+              class="input"
+              id="pcPath"
+              type="text"
+              placeholder="/api/v2/user/account"
+            />
+          </div>
+        </div>
+
+        <div class="field mt-12">
+          <label class="label" for="pcBody">Body (JSON)</label>
+          <textarea class="textarea" id="pcBody" rows="6">{}</textarea>
+        </div>
+
+        <div class="btn-row mt-12">
+          <button class="btn btn-primary" id="pcSendBtn">Send</button>
+        </div>
+
+        <div class="log note mt-12" id="pcLog" aria-live="polite"></div>
+      </section>
+
+      <!-- ============================ Footer ============================ -->
+      <footer class="app-footer">
+        <div>Dark UI • 600×700 canvas</div>
+        <div class="small-hint">© Coinben</div>
+      </footer>
+    </div>
+    <!-- /.trade-app -->
+
+    <!-- ============================ SCRIPT ============================ -->
+    <script>
+      /* ============== Helpers ============== */
+      const $ = (id) => document.getElementById(id);
+      const now = () => new Date().toLocaleTimeString();
+      function log(el, msg) {
+        const p = document.createElement("div");
+        p.textContent = "[" + now() + "] " + msg;
+        el.prepend(p);
+      }
+      function j(o) {
+        try {
+          return JSON.stringify(o, null, 2);
+        } catch (e) {
+          return String(o);
+        }
+      }
+      function base() {
+        return $("baseUrl").value.trim().replace(/\/$/, "");
+      }
+      async function postJson(url, body) {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const txt = await res.text();
+        try {
+          return { ok: res.ok, data: JSON.parse(txt) };
+        } catch {
+          return { ok: res.ok, data: txt };
+        }
+      }
+
+      /* ============== Connection & Balances ============== */
+      $("pingBtn").onclick = async () => {
+        const url = base() + "/status";
+        try {
+          const res = await fetch(url);
+          log($("connLog"), "PING " + url + " → " + res.status);
+        } catch (e) {
+          log($("connLog"), "PING failed: " + e.message);
+        }
+      };
+
+      $("balSpotBtn").onclick = async () => {
+        const url = base() + "/bitget/private-call";
+        const body = { method: "GET", path: "/api/v2/spot/account/assets" };
+        const r = await postJson(url, body);
+        log($("connLog"), "Spot balance: " + (r.ok ? "OK" : "ERR"));
+        log($("connLog"), j(r.data));
+      };
+      $("balFutBtn").onclick = async () => {
+        const url = base() + "/bitget/private-call";
+        const body = {
+          method: "GET",
+          path: "/api/v2/mix/account/accounts?productType=USDT-FUTURES",
+        };
+        const r = await postJson(url, body);
+        log($("connLog"), "Futures balance: " + (r.ok ? "OK" : "ERR"));
+        log($("connLog"), j(r.data));
+      };
+
+      /* ============== Read Common Inputs ============== */
+      function readCommon() {
+        const symbol = $("symbol").value.trim().toUpperCase();
+        const amt = parseFloat($("amt").value);
+        const amtType = $("amtType").value;
+        const lev = parseInt($("leverage").value, 10);
+        const posMode = $("posMode").value; // cross / isolated
+        const tpPct = parseFloat($("tpPct").value);
+        const slPct = parseFloat($("slPct").value);
+        const safeMode = $("safeMode").value === "on";
+        return { symbol, amt, amtType, lev, posMode, tpPct, slPct, safeMode };
+      }
+
+      /* ============== Futures: Market ============== */
+      async function futMarket(side) {
+        const p = readCommon();
+        if (p.safeMode) {
+          log($("futLog"), "Safety Mode ON — order blocked");
+          return;
+        }
+        const body = {
+          productType: "USDT-FUTURES",
+          symbol: p.symbol,
+          side: side, // 'buy' (long) | 'sell' (short)
+          sizeType: p.amtType, // 'USDT' | 'COIN'
+          size: p.amt,
+          leverage: p.lev,
+          marginMode: p.posMode, // 'cross' | 'isolated'
+          tpPct: isFinite(p.tpPct) ? p.tpPct : null,
+          slPct: isFinite(p.slPct) ? p.slPct : null,
+        };
+        const url = base() + "/mix/market-order";
+        const r = await postJson(url, body);
+        log(
+          $("futLog"),
+          `${p.symbol} futures ${side.toUpperCase()} (market) → ` +
+            (r.ok ? "OK" : "ERR"),
+        );
+        log($("futLog"), j(r.data));
+      }
+      async function futClose(holdSide) {
+        const p = readCommon();
+        const url = base() + "/mix/close-position";
+        const body = {
+          productType: "USDT-FUTURES",
+          symbol: p.symbol,
+          holdSide,
+        };
+        const r = await postJson(url, body);
+        log(
+          $("futLog"),
+          `${p.symbol} close (${holdSide}) → ` + (r.ok ? "OK" : "ERR"),
+        );
+        log($("futLog"), j(r.data));
+      }
+      $("futLongBtn").onclick = () => futMarket("buy");
+      $("futShortBtn").onclick = () => futMarket("sell");
+      $("futCloseLongBtn").onclick = () => futClose("long");
+      $("futCloseShortBtn").onclick = () => futClose("short");
+      $("futCloseAllBtn").onclick = () => futClose("all");
+
+      /* ============== Spot: Market ============== */
+      async function spotBuy() {
+        const p = readCommon();
+        if (p.safeMode) {
+          log($("spotLog"), "Safety Mode ON — order blocked");
+          return;
+        }
+        const url = base() + "/spot/market-order";
+        const body = {
+          symbol: p.symbol,
+          side: "buy",
+          sizeType: p.amtType,
+          size: p.amt,
+        };
+        const r = await postJson(url, body);
+        log($("spotLog"), `${p.symbol} spot BUY → ` + (r.ok ? "OK" : "ERR"));
+        log($("spotLog"), j(r.data));
+      }
+      async function spotSellAll() {
+        const p = readCommon();
+        const url = base() + "/spot/sell-all";
+        const body = { symbol: p.symbol };
+        const r = await postJson(url, body);
+        log(
+          $("spotLog"),
+          `${p.symbol} spot SELL ALL → ` + (r.ok ? "OK" : "ERR"),
+        );
+        log($("spotLog"), j(r.data));
+      }
+      $("spotBuyBtn").onclick = spotBuy;
+      $("spotSellAllBtn").onclick = spotSellAll;
+
+      /* ============== Private Call (Proxy) ============== */
+      $("pcSendBtn").onclick = async () => {
+        const method = $("pcMethod").value;
+        const path = $("pcPath").value.trim();
+        let bodyJson = {};
+        try {
+          bodyJson = JSON.parse($("pcBody").value || "{}");
+        } catch (e) {
+          bodyJson = $("pcBody").value;
+        }
+        if (!path) {
+          log($("pcLog"), "Enter endpoint path");
+          return;
+        }
+        const url = base() + "/bitget/private-call";
+        const body = { method, path, body: bodyJson };
+        const r = await postJson(url, body);
+        log(
+          $("pcLog"),
+          `private-call ${method} ${path} → ` + (r.ok ? "OK" : "ERR"),
+        );
+        log($("pcLog"), j(r.data));
+      };
+    </script>
+    <!-- ============================ /SCRIPT ============================ -->
+  </body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "editor.formatOnSave": true, // 파일 저장 시 자동으로 포맷
+  "editor.defaultFormatter": "esbenp.prettier-vscode", // Prettier 사용
+  "files.autoSave": "afterDelay", // 자동 저장 활성화
+  "files.autoSaveDelay": 1000, // 자동 저장 딜레이 (1초)
+  "editor.quickSuggestions": {
+    "other": true, // 일반 코드 자동 완성
+    "comments": true, // 주석 내 자동 완성
+    "strings": true // 문자열 내 자동 완성
+  },
+  "editor.tabCompletion": "on", // 탭을 눌러 자동 완성 활성화
+  "editor.suggestOnTriggerCharacters": true, // 자동 제안 활성화
+  "eslint.validate": ["javascript", "javascriptreact", "html"], // ESLint 활성화
+  "eslint.autoFixOnSave": true // 자동으로 저장 시 ESLint 오류 수정
+}

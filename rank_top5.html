@@ -1,0 +1,814 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Bitget USDT-M Futures Top Gainers/Losers (Live)</title>
+
+    <style>
+      :root {
+        --bg: #0b0f14;
+        --panel: #0f141a;
+        --card: #0b1117;
+        --line: #1e2a36;
+        --ink: #e6edf3;
+        --muted: #9fb0c3;
+        --pos: #19c37d;
+        --neg: #ef4444;
+        --neu: #64748b;
+        --pill: #1a2230;
+        --warn: #f59e0b;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          14px/1.45 system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          "Apple SD Gothic Neo",
+          "Malgun Gothic",
+          sans-serif;
+      }
+
+      .container {
+        width: 100%;
+        max-width: 100%;
+        padding: 12px;
+        margin: 0 auto;
+      }
+
+      /* 상단 Breadth */
+      .breadth-wrap {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      .bcard {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px;
+      }
+      .bhead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        gap: 8px;
+      }
+      .btitle {
+        font-weight: 700;
+      }
+      .bctrl {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      select.bsel,
+      select,
+      button,
+      input {
+        background: var(--card);
+        color: var(--ink);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 6px 8px;
+        outline: none;
+      }
+      button {
+        cursor: pointer;
+        border-radius: 10px;
+      }
+      button:hover {
+        border-color: #2b3a4a;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: var(--pill);
+        border: 1px solid var(--line);
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .badge.warn {
+        background: var(--warn);
+        color: #111;
+      }
+
+      .bar {
+        height: 14px;
+        border-radius: 999px;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        background: #0e141b;
+        position: relative;
+      }
+      .bar > div {
+        height: 100%;
+        position: absolute;
+        top: 0;
+      }
+      .bar .up {
+        left: 0;
+        background: var(--pos);
+      }
+      .bar .mid {
+        background: var(--neu);
+      }
+      .bar .dn {
+        background: var(--neg);
+      }
+      .bmetrics {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+      }
+      .pill {
+        padding: 6px 10px;
+        border-radius: 999px;
+        border: 1px dashed var(--line);
+        color: var(--muted);
+        background: var(--card);
+      }
+      .pill .v {
+        color: var(--ink);
+        font-weight: 700;
+        margin-left: 6px;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px;
+      }
+      .row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin: 12px 0;
+      }
+      label {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      .muted {
+        color: var(--muted);
+      }
+      h1 {
+        font-size: 18px;
+        margin: 10px 0;
+      }
+
+      /* 표 */
+      .tableWrap {
+        overflow-x: auto;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+      }
+      table {
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 100%;
+        min-width: 760px;
+        background: var(--panel);
+      }
+      thead th {
+        position: sticky;
+        top: 0;
+        background: #0e141b;
+        border-bottom: 1px solid var(--line);
+        font-weight: 600;
+        text-align: left;
+      }
+      th,
+      td {
+        padding: 6px 8px;
+        border-bottom: 1px solid var(--line);
+        white-space: nowrap;
+      }
+      td.left,
+      th.left {
+        text-align: left;
+      }
+      td.num,
+      th.num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .pos {
+        color: var(--pos);
+      }
+      .neg {
+        color: var(--neg);
+      }
+
+      /* 좁은 폭 대응 */
+      @media (max-width: 900px) {
+        .breadth-wrap {
+          grid-template-columns: 1fr;
+        }
+        table {
+          min-width: 640px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- ===== Breadth (상/보합/하) ===== -->
+      <div class="breadth-wrap">
+        <div class="bcard">
+          <div class="bhead">
+            <div class="btitle">USDT-Futures 전체 — 상승/하락 비중</div>
+            <div class="bctrl">
+              <label>봉 간격</label>
+              <select id="futTf" class="bsel">
+                <option value="1">1분</option>
+                <option value="3">3분</option>
+                <option value="5" selected>5분</option>
+                <option value="10">10분</option>
+                <option value="15">15분</option>
+              </select>
+              <span id="futStatus" class="badge">워밍업</span>
+            </div>
+          </div>
+          <div class="bar">
+            <div id="futUp" class="up" style="width: 0%"></div>
+            <div id="futMid" class="mid" style="width: 0%"></div>
+            <div id="futDn" class="dn" style="width: 0%"></div>
+          </div>
+          <div class="bmetrics">
+            <div id="futUpPill" class="pill">
+              상승(%) <span class="v" id="futUpPct">0</span>
+            </div>
+            <div id="futMidPill" class="pill">
+              보합(%) <span class="v" id="futZPct">0</span>
+            </div>
+            <div id="futDnPill" class="pill">
+              하락(%) <span class="v" id="futDnPct">0</span>
+            </div>
+            <div class="pill">
+              상승 심볼 <span class="v" id="futUpCnt">0</span>
+            </div>
+            <div class="pill">
+              보합 심볼 <span class="v" id="futZCnt">0</span>
+            </div>
+            <div class="pill">
+              하락 심볼 <span class="v" id="futDnCnt">0</span>
+            </div>
+            <div class="pill">
+              총 심볼 <span class="v" id="futTotal">0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bcard">
+          <div class="bhead">
+            <div class="btitle">SPOT 전체 — 상승/하락 비중</div>
+            <div class="bctrl">
+              <label>봉 간격</label>
+              <select id="spotTf" class="bsel">
+                <option value="1">1분</option>
+                <option value="3">3분</option>
+                <option value="5" selected>5분</option>
+                <option value="10">10분</option>
+                <option value="15">15분</option>
+              </select>
+              <span id="spotStatus" class="badge">워밍업</span>
+            </div>
+          </div>
+          <div class="bar">
+            <div id="spotUp" class="up" style="width: 0%"></div>
+            <div id="spotMid" class="mid" style="width: 0%"></div>
+            <div id="spotDn" class="dn" style="width: 0%"></div>
+          </div>
+          <div class="bmetrics">
+            <div id="spotUpPill" class="pill">
+              상승(%) <span class="v" id="spotUpPct">0</span>
+            </div>
+            <div id="spotMidPill" class="pill">
+              보합(%) <span class="v" id="spotZPct">0</span>
+            </div>
+            <div id="spotDnPill" class="pill">
+              하락(%) <span class="v" id="spotDnPct">0</span>
+            </div>
+            <div class="pill">
+              상승 심볼 <span class="v" id="spotUpCnt">0</span>
+            </div>
+            <div class="pill">
+              보합 심볼 <span class="v" id="spotZCnt">0</span>
+            </div>
+            <div class="pill">
+              하락 심볼 <span class="v" id="spotDnCnt">0</span>
+            </div>
+            <div class="pill">
+              총 심볼 <span class="v" id="spotTotal">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h1>Bitget USDT-Futures Rank TOP5</h1>
+
+      <div class="panel">
+        <div class="row">
+          <label>주기:</label>
+          <select id="period">
+            <option value="2000">2s</option>
+            <option value="5000" selected>5s</option>
+            <option value="10000">10s</option>
+            <option value="30000">30s</option>
+          </select>
+          <button id="btnStart">Start</button>
+          <button id="btnStop">Stop</button>
+          <span id="status" class="muted">대기</span>
+          <span class="badge" title="캔들(고가/저가 시각)은 이 간격으로 갱신"
+            >캔들 60s</span
+          >
+        </div>
+
+        <div class="tableWrap">
+          <table id="tbl">
+            <thead>
+              <tr>
+                <th class="left">순위</th>
+                <th class="left">구분</th>
+                <th class="left">심볼</th>
+                <th class="num">가격(USDT)</th>
+                <th class="num">Fut%</th>
+                <th class="num">Spot%</th>
+                <th class="num">거래량(USDT)</th>
+                <th class="num">24h 고가</th>
+                <th class="left">24h 고가시각</th>
+                <th class="num">24h 저가</th>
+                <th class="left">24h 저가시각</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      /* ============================== 공통 ============================== */
+      const API = "https://api.bitget.com";
+      const PRODUCT_TYPE = "USDT-FUTURES";
+      const EXCLUDE_BASES = ["USDT", "USDC", "BGB", "WBTC", "STETH"];
+
+      const num = (v) => {
+        const n = Number(v);
+        return Number.isFinite(n) ? n : NaN;
+      };
+      const pctFmt = (v) =>
+        Number.isFinite(v) ? v.toFixed(Math.abs(v) >= 100 ? 2 : 2) : "";
+      const nfix = (v, p = 6) => (Number.isFinite(v) ? v.toFixed(p) : "");
+      const nint = (v) =>
+        Number.isFinite(v)
+          ? v.toLocaleString("en-US", { maximumFractionDigits: 0 })
+          : "";
+      const clsPct = (v) => (v > 0 ? "pos" : v < 0 ? "neg" : "");
+
+      function filterUsdt(symbol) {
+        const base = symbol.replace(/USDT.*/, "");
+        if (EXCLUDE_BASES.includes(base)) return false;
+        return /USDT$/i.test(symbol);
+      }
+
+      /* ============================== Breadth (0.5s, boundary) ============================== */
+      const breadthCfg = {
+        pollMs: 500,
+        futUrl: (pt) => `${API}/api/v2/mix/market/tickers?productType=${pt}`,
+        spotUrl: () => `${API}/api/v2/spot/market/tickers`,
+      };
+      const futHist = new Map(),
+        spotHist = new Map();
+      let futWindowMin = 5,
+        spotWindowMin = 5;
+
+      document.getElementById("futTf").addEventListener("change", (e) => {
+        futWindowMin = +e.target.value;
+        renderBreadth();
+      });
+      document.getElementById("spotTf").addEventListener("change", (e) => {
+        spotWindowMin = +e.target.value;
+        renderBreadth();
+      });
+
+      function trimHistory(queue, keepMin) {
+        const cutoff = Date.now() - keepMin * 60 * 1000;
+        while (queue.length && queue[0].ts < cutoff) queue.shift();
+      }
+      function boundaryStart(min) {
+        const tf = min * 60 * 1000;
+        const now = Date.now();
+        const al = Math.floor(now / tf) * tf;
+        return al - tf;
+      }
+      function baseAtOrAfter(q, t0) {
+        if (!q || !q.length) return null;
+        for (let i = 0; i < q.length; i++) {
+          if (q[i].ts >= t0) return q[i].price;
+        }
+        return null;
+      }
+      function baseAtOrBefore(q, t0) {
+        let b = null;
+        for (let i = q.length - 1; i >= 0; i--) {
+          if (q[i].ts <= t0) {
+            b = q[i].price;
+            break;
+          }
+        }
+        if (b == null && q.length) b = q[0].price;
+        return b;
+      }
+      function computeCounts(mapHist, min) {
+        const t0 = boundaryStart(min);
+        let up = 0,
+          dn = 0,
+          flat = 0,
+          total = 0;
+        for (const [, q] of mapHist.entries()) {
+          if (!q || q.length < 2) continue;
+          let base = baseAtOrAfter(q, t0);
+          if (base == null) base = baseAtOrBefore(q, t0);
+          const last = q[q.length - 1].price;
+          if (base == null || !isFinite(last)) continue;
+          total++;
+          if (last > base) up++;
+          else if (last < base) dn++;
+          else flat++;
+        }
+        return { up, dn, flat, total };
+      }
+      function drawBar(
+        upId,
+        midId,
+        dnId,
+        upPctId,
+        midPctId,
+        dnPctId,
+        upCntId,
+        midCntId,
+        dnCntId,
+        totalId,
+        { up, dn, flat, total },
+      ) {
+        const upPct = total ? Math.round((up / total) * 100) : 0,
+          midPct = total ? Math.round((flat / total) * 100) : 0,
+          dnPct = total ? Math.round((dn / total) * 100) : 0;
+        const upEl = document.getElementById(upId),
+          midEl = document.getElementById(midId),
+          dnEl = document.getElementById(dnId);
+        upEl.style.width = upPct + "%";
+        upEl.style.left = "0%";
+        midEl.style.width = midPct + "%";
+        midEl.style.left = upPct + "%";
+        dnEl.style.width = dnPct + "%";
+        dnEl.style.left = upPct + midPct + "%";
+        document.getElementById(upPctId).textContent = upPct;
+        document.getElementById(midPctId).textContent = midPct;
+        document.getElementById(dnPctId).textContent = dnPct;
+        document.getElementById(upCntId).textContent = up;
+        document.getElementById(midCntId).textContent = flat;
+        document.getElementById(dnCntId).textContent = dn;
+        document.getElementById(totalId).textContent = total;
+      }
+      function renderBreadth() {
+        const fut = computeCounts(futHist, futWindowMin),
+          spot = computeCounts(spotHist, spotWindowMin);
+        drawBar(
+          "futUp",
+          "futMid",
+          "futDn",
+          "futUpPct",
+          "futZPct",
+          "futDnPct",
+          "futUpCnt",
+          "futZCnt",
+          "futDnCnt",
+          "futTotal",
+          fut,
+        );
+        drawBar(
+          "spotUp",
+          "spotMid",
+          "spotDn",
+          "spotUpPct",
+          "spotZPct",
+          "spotDnPct",
+          "spotUpCnt",
+          "spotZCnt",
+          "spotDnCnt",
+          "spotTotal",
+          spot,
+        );
+      }
+      async function pollBreadth() {
+        try {
+          const [fut, spot] = await Promise.allSettled([
+            fetchJSON(breadthCfg.futUrl(PRODUCT_TYPE)),
+            fetchJSON(breadthCfg.spotUrl()),
+          ]);
+          const now = Date.now();
+          if (fut.status === "fulfilled" && Array.isArray(fut.value?.data)) {
+            for (const t of fut.value.data) {
+              const sym = String(t.symbol || t.instId || "").toUpperCase();
+              const px = num(t.lastPr ?? t.last ?? t.close ?? t.lastPrice);
+              if (!sym || !isFinite(px)) continue;
+              if (!futHist.has(sym)) futHist.set(sym, []);
+              const q = futHist.get(sym);
+              q.push({ ts: now, price: px });
+              trimHistory(q, 20);
+            }
+            document.getElementById("futStatus").textContent = "업데이트";
+          }
+          if (spot.status === "fulfilled" && Array.isArray(spot.value?.data)) {
+            for (const t of spot.value.data) {
+              const sym = String(t.symbol || t.instId || "").toUpperCase();
+              const px = num(t.lastPr ?? t.last ?? t.close ?? t.lastPrice);
+              if (!sym || !isFinite(px)) continue;
+              if (!spotHist.has(sym)) spotHist.set(sym, []);
+              const q = spotHist.get(sym);
+              q.push({ ts: now, price: px });
+              trimHistory(q, 20);
+            }
+            document.getElementById("spotStatus").textContent = "업데이트";
+          }
+          renderBreadth();
+        } catch (e) {
+          console.error(e);
+        } finally {
+          const delay = document.hidden
+            ? Math.max(2000, breadthCfg.pollMs)
+            : breadthCfg.pollMs;
+          setTimeout(pollBreadth, delay);
+        }
+      }
+
+      /* ============================== Rank ============================== */
+      const N = 5,
+        CANDLE_REFRESH_MS = 60000,
+        GRANULARITY = "5m",
+        LOOKBACK_BARS = 288;
+      let rankTimer = null,
+        candleTimer = null,
+        previousKeys = new Set(),
+        lastRankRows = [],
+        candleCache = new Map();
+
+      function key(side, sym) {
+        return `${side}:${sym}`;
+      }
+      async function fetchJSON(url, opt) {
+        const r = await fetch(url, opt);
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      }
+
+      /* 선물/현물 각각의 24h 등락%를 Bitget 방식으로 계산 */
+      function calcPctFromTicker(t, isSpot = false) {
+        const last = num(t.lastPr ?? t.last ?? t.close ?? t.lastPrice);
+        const open = num(t.open24h ?? t.openPr ?? t.open ?? t.openPrice);
+        if (Number.isFinite(last) && Number.isFinite(open) && open !== 0) {
+          return ((last - open) / open) * 100;
+        }
+        // fallback: change24h / change 가 비율(0.0123)일 수도, %일 수도 있음
+        let raw = num(
+          isSpot ? (t.change ?? t.change24h) : (t.change24h ?? t.change),
+        );
+        if (Number.isFinite(raw)) {
+          if (Math.abs(raw) < 1) raw *= 100; // 비율로 오면 %
+          return raw;
+        }
+        return NaN;
+      }
+
+      async function fetchFuturesTickers() {
+        const j = await fetchJSON(
+          `${API}/api/v2/mix/market/tickers?productType=${encodeURIComponent(PRODUCT_TYPE)}`,
+        );
+        const arr = Array.isArray(j?.data) ? j.data : [];
+        return arr
+          .filter((t) => filterUsdt(String(t.symbol || "")))
+          .map((t) => ({
+            symbol: String(t.symbol || ""),
+            last: num(t.lastPr ?? t.last ?? t.close ?? t.lastPrice),
+            futPct: calcPctFromTicker(t, false),
+            volUSDT: num(t.usdtVolume ?? t.quoteVolume),
+            open24h: num(t.open24h),
+          }));
+      }
+
+      async function fetchSpotTickersMap() {
+        const j = await fetchJSON(`${API}/api/v2/spot/market/tickers`);
+        const arr = Array.isArray(j?.data) ? j.data : [];
+        const map = new Map();
+        for (const t of arr) {
+          const sym = String(t.symbol || t.instId || "").toUpperCase();
+          const sp = calcPctFromTicker(t, true);
+          if (filterUsdt(sym)) map.set(sym, sp);
+        }
+        return map;
+      }
+
+      async function fetchCandles(symbol, endTimeMs = null, limit = 200) {
+        const params = new URLSearchParams({
+          symbol,
+          granularity: GRANULARITY,
+          productType: PRODUCT_TYPE,
+          limit: String(limit),
+        });
+        if (endTimeMs) params.set("endTime", String(endTimeMs));
+        const j = await fetchJSON(
+          `${API}/api/v2/mix/market/history-candles?${params.toString()}`,
+        );
+        return Array.isArray(j?.data) ? j.data : [];
+      }
+      async function ensureCandleInfo(symbol) {
+        const cache = candleCache.get(symbol);
+        if (cache && Date.now() - cache.asOf < CANDLE_REFRESH_MS) return cache;
+        try {
+          let bars = await fetchCandles(symbol, null, 200);
+          if (bars.length < LOOKBACK_BARS) {
+            const oldest = bars.length
+              ? Number(bars[bars.length - 1][0])
+              : null;
+            if (oldest) {
+              const more = await fetchCandles(symbol, oldest - 1, 200);
+              bars = bars.concat(more);
+            }
+          }
+          bars.sort((a, b) => Number(a[0]) - Number(b[0]));
+          if (bars.length > LOOKBACK_BARS) bars = bars.slice(-LOOKBACK_BARS);
+          let hi = -Infinity,
+            hiT = null,
+            lo = Infinity,
+            loT = null;
+          for (const k of bars) {
+            const ts = +k[0],
+              h = num(k[2]),
+              l = num(k[3]);
+            if (h > hi) {
+              hi = h;
+              hiT = ts;
+            }
+            if (l < lo) {
+              lo = l;
+              loT = ts;
+            }
+          }
+          const info = {
+            high: hi,
+            highT: hiT,
+            low: lo,
+            lowT: loT,
+            asOf: Date.now(),
+          };
+          candleCache.set(symbol, info);
+          return info;
+        } catch {
+          return {
+            high: NaN,
+            highT: null,
+            low: NaN,
+            lowT: null,
+            asOf: Date.now(),
+          };
+        }
+      }
+
+      async function refreshRank() {
+        const st = document.getElementById("status");
+        try {
+          st.textContent = "요청 중…";
+          const [futs, spotMap] = await Promise.all([
+            fetchFuturesTickers(),
+            fetchSpotTickersMap(),
+          ]);
+
+          // futures 기준 오름/내림
+          const rows = futs
+            .filter((r) => Number.isFinite(r.futPct))
+            .map((r) => ({ ...r, spotPct: spotMap.get(r.symbol) ?? NaN }));
+
+          const desc = [...rows].sort((a, b) => b.futPct - a.futPct);
+          const asc = [...rows].sort((a, b) => a.futPct - b.futPct);
+
+          const gainers = desc
+            .slice(0, 5)
+            .map((d, i) => ({ rank: i + 1, side: "+ ", data: d }));
+          const losers = asc
+            .slice(0, 5)
+            .map((d, i) => ({ rank: i + 1, side: "- ", data: d }));
+          const current = new Set(
+            [...gainers, ...losers].map((x) =>
+              key(x.side.trim(), x.data.symbol),
+            ),
+          );
+          previousKeys = current;
+
+          const targets = [...gainers, ...losers];
+          await Promise.all(
+            targets.map(async (e) => {
+              const info = await ensureCandleInfo(e.data.symbol);
+              e.high = info.high;
+              e.highT = info.highT;
+              e.low = info.low;
+              e.lowT = info.lowT;
+            }),
+          );
+
+          lastRankRows = targets;
+          renderTable(targets);
+          st.textContent = "업데이트: " + new Date().toLocaleTimeString();
+        } catch (err) {
+          console.error(err);
+          st.textContent = "에러: " + err.message;
+        }
+      }
+
+      function renderTable(list) {
+        const tbody = document.querySelector("#tbl tbody");
+        tbody.innerHTML = "";
+        const groups = [
+          {
+            label: "Gainers(+)",
+            items: list.filter((x) => x.side.trim() === "+"),
+          },
+          {
+            label: "Losers(-)",
+            items: list.filter((x) => x.side.trim() === "-"),
+          },
+        ];
+        const frag = document.createDocumentFragment();
+        for (const g of groups) {
+          for (const e of g.items) {
+            const d = e.data;
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+        <td class="left">${e.rank}</td>
+        <td class="left">${g.label}</td>
+        <td class="left">${d.symbol}</td>
+        <td class="num">${nfix(d.last, 6)}</td>
+        <td class="num ${clsPct(d.futPct)}">${pctFmt(d.futPct)}</td>
+        <td class="num ${clsPct(d.spotPct)}">${Number.isFinite(d.spotPct) ? pctFmt(d.spotPct) : "-"}</td>
+        <td class="num">${nint(d.volUSDT)}</td>
+        <td class="num">${nfix(e.high, 6)}</td>
+        <td class="left">${e.highT ? new Date(e.highT).toLocaleString() : ""}</td>
+        <td class="num">${nfix(e.low, 6)}</td>
+        <td class="left">${e.lowT ? new Date(e.lowT).toLocaleString() : ""}</td>`;
+            frag.appendChild(tr);
+          }
+        }
+        tbody.appendChild(frag);
+      }
+
+      /* ============================== Loop ============================== */
+      function start() {
+        stop();
+        const ms = Number(document.getElementById("period").value || 5000);
+        refreshRank();
+        rankTimer = setInterval(refreshRank, ms);
+        pollBreadth();
+        candleTimer = setInterval(() => {
+          candleCache.clear();
+          if (lastRankRows.length) refreshRank();
+        }, CANDLE_REFRESH_MS);
+      }
+      function stop() {
+        if (rankTimer) {
+          clearInterval(rankTimer);
+          rankTimer = null;
+        }
+        if (candleTimer) {
+          clearInterval(candleTimer);
+          candleTimer = null;
+        }
+        document.getElementById("status").textContent = "정지";
+      }
+
+      document.getElementById("btnStart").addEventListener("click", start);
+      document.getElementById("btnStop").addEventListener("click", stop);
+      start();
+    </script>
+  </body>
+</html>

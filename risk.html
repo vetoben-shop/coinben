@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,maximum-scale=1"
+    />
+    <title>Coinben Bot — Risk Bot</title>
+    <link rel="stylesheet" href="css/core.css" />
+    <link rel="stylesheet" href="css/risk.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>
+        위험 감지 신호 <span class="muted">(Market-maker 틀기 집중)</span>
+        <span id="riskBadge" class="badge">Risk: L0 (정상)</span>
+      </h1>
+
+      <!-- ============================ [MOD] Toolbar: 자동시작/간격 3s 기본 ============================ -->
+      <div class="toolbar">
+        <div>
+          <label>Symbol</label>
+          <input id="sym" type="text" value="BTCUSDT" />
+        </div>
+        <div>
+          <label>TopN</label>
+          <select id="topn">
+            <option>20</option>
+            <option selected>50</option>
+            <option>100</option>
+          </select>
+        </div>
+        <div>
+          <label>주기</label>
+          <select id="interval">
+            <option value="2000">2s</option>
+            <option value="3000" selected>3s</option>
+            <option value="5000">5s</option>
+            <option value="10000">10s</option>
+          </select>
+        </div>
+        <button id="startBtn">Start</button>
+        <button id="stopBtn">Stop</button>
+        <span id="status" class="badge">워밍업</span>
+      </div>
+      <!-- ============================ /Toolbar ============================ -->
+
+      <!-- ============================ KPI Cards (샘플 스크린샷 스타일) ============================ -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-head">Depth Imbalance (TopN)</div>
+          <div id="kpiImb" class="kpi-val">-</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-head">Depth Collapse (5s)</div>
+          <div id="kpiCollapse" class="kpi-val">-</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-head">Price Divergence (Fut vs Spot)</div>
+          <div id="kpiDiv" class="kpi-val">-</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-head">Spread (bps)</div>
+          <div id="kpiSpread" class="kpi-val">-</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-head">Bid%</div>
+          <div id="kpiBidPct" class="kpi-val">-</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-head">Ask%</div>
+          <div id="kpiAskPct" class="kpi-val">-</div>
+        </div>
+      </div>
+
+      <div class="hint muted">
+        * 취소물/스푸핑/OI/거래량 급증 등 추가 신호는 서버/WS 연동 시 확장 예정.
+      </div>
+
+      <div id="log" class="log" aria-live="polite"></div>
+    </div>
+
+    <!-- ============================ SCRIPT ============================ -->
+    <script>
+      /* =========================================================================
+   Coinben Risk Bot — 작동 보장 버전
+   - [MOD] 자동 시작 (로드 후 곧바로 Start)
+   - [MOD] 주기 기본 3s
+   - [MOD] 네트워크/429/JSON 예외 세분화 및 재시도(지수 백오프)
+   - Bitget 공개 API만 사용 (CORS 허용 엔드포인트)
+   ======================================================================== */
+
+      /* --------------------------- 공통 유틸 --------------------------- */
+      const $ = (id) => document.getElementById(id);
+      const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+      const nf2 = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
+      const nf0 = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+      const pct2 = (x) =>
+        x == null || !isFinite(x) ? "-" : nf2.format(x) + "%";
+      const bps2 = (x) => (x == null || !isFinite(x) ? "-" : nf2.format(x));
+      const x2 = (x) => (x == null || !isFinite(x) ? "-" : nf2.format(x) + "x");
+
+      function log(msg) {
+        const el = $("log");
+        const p = document.createElement("div");
+        const t = new Date().toLocaleTimeString();
+        p.textContent = `[${t}] ${msg}`;
+        el.prepend(p);
+      }
+
+      /* --------------------------- Bitget API --------------------------- */
+      const PRODUCT_TYPE = "USDT-FUTURES"; // 대문자 v2 규격
+
+      async function fetchJSON(url, attempt = 1) {
+        try {
+          const res = await fetch(url, { cache: "no-store" });
+          if (!res.ok) {
+            // 429/5xx 등은 재시도
+            if (
+              (res.status === 429 || (res.status >= 500 && res.status < 600)) &&
+              attempt < 4
+            ) {
+              const backoff = 400 * Math.pow(2, attempt - 1);
+              await sleep(backoff);
+              return fetchJSON(url, attempt + 1);
+            }
+            throw new Error("HTTP " + res.status);
+          }
+          return res.json();
+        } catch (e) {
+          if (attempt < 4) {
+            const backoff = 400 * Math.pow(2, attempt - 1);
+            await sleep(backoff);
+            return fetchJSON(url, attempt + 1);
+          }
+          throw e;
+        }
+      }
+
+      async function getMergeDepth(symbol, topN) {
+        const u = new URL(
+          "https://api.bitget.com/api/v2/mix/market/merge-depth",
+        );
+        u.searchParams.set("productType", PRODUCT_TYPE);
+        u.searchParams.set("symbol", symbol);
+        u.searchParams.set("precision", "scale0");
+        u.searchParams.set("limit", String(topN));
+        return fetchJSON(u.toString());
+      }
+
+      async function getFuturesTickerMap() {
+        const u = new URL("https://api.bitget.com/api/v2/mix/market/tickers");
+        u.searchParams.set("productType", PRODUCT_TYPE);
+        u.searchParams.set("_", Date.now());
+        const j = await fetchJSON(u.toString());
+        const m = new Map();
+        for (const t of j?.data || []) {
+          const sym = String(t.symbol || t.instId || "").toUpperCase();
+          const px = Number(
+            t.lastPr ?? t.last ?? t.close ?? t.lastPrice ?? t.closePrice,
+          );
+          if (sym && isFinite(px)) m.set(sym, px);
+        }
+        return m;
+      }
+
+      async function getSpotTickerMap() {
+        const u = new URL("https://api.bitget.com/api/v2/spot/market/tickers");
+        u.searchParams.set("_", Date.now());
+        const j = await fetchJSON(u.toString());
+        const m = new Map();
+        for (const t of j?.data || []) {
+          const sym = String(t.symbol || t.instId || "").toUpperCase();
+          const px = Number(
+            t.lastPr ?? t.last ?? t.close ?? t.lastPrice ?? t.closePrice,
+          );
+          if (sym && isFinite(px)) m.set(sym, px);
+        }
+        return m;
+      }
+
+      /* --------------------------- 계산 로직 --------------------------- */
+      function sumNotional(levels, topN) {
+        let s = 0;
+        for (let i = 0; i < Math.min(levels.length, topN); i++) {
+          const px = Number(levels[i][0]);
+          const sz = Number(levels[i][1]);
+          if (!isFinite(px) || !isFinite(sz)) continue;
+          s += px * sz;
+        }
+        return s;
+      }
+
+      function calcDepthStats(depthJson, topN) {
+        const bids = depthJson?.data?.bids || [];
+        const asks = depthJson?.data?.asks || [];
+        const bn = sumNotional(bids, topN);
+        const an = sumNotional(asks, topN);
+        const total = bn + an;
+        const bidPct = total > 0 ? (bn / total) * 100 : null;
+        const askPct = total > 0 ? (an / total) * 100 : null;
+
+        const bestBid = bids[0] ? Number(bids[0][0]) : null;
+        const bestAsk = asks[0] ? Number(asks[0][0]) : null;
+        let spreadBps = null;
+        if (bestBid != null && bestAsk != null) {
+          const mid = (bestBid + bestAsk) / 2;
+          spreadBps = ((bestAsk - bestBid) / mid) * 10000;
+        }
+
+        // Imbalance: Bid/Ask (bid가 작으면 1 미만)
+        const imb = an > 0 ? bn / an : null;
+
+        return {
+          bidNotional: bn,
+          askNotional: an,
+          totalNotional: total,
+          bidPct: bidPct == null ? null : Math.round(bidPct * 100) / 100,
+          askPct: askPct == null ? null : Math.round(askPct * 100) / 100,
+          spreadBps:
+            spreadBps == null ? null : Math.round(spreadBps * 100) / 100,
+          imbalance: imb == null ? null : Math.round(imb * 100) / 100 / 1, // 보이는 값은 그대로 소수 둘째자리
+        };
+      }
+
+      /* 5초 Collapse: 총호가노출(TopN) 기준 5초 전 대비 증감율(%) */
+      const collapseHist = []; // {ts, total}
+      function getCollapse5s(nowTotal) {
+        const now = Date.now();
+        collapseHist.push({ ts: now, total: nowTotal });
+        // 12초 보관
+        while (collapseHist.length && now - collapseHist[0].ts > 12000)
+          collapseHist.shift();
+        // 5초 이상 경과한 첫 값 찾기
+        for (let i = 0; i < collapseHist.length; i++) {
+          if (now - collapseHist[i].ts >= 5000) {
+            const base = collapseHist[i].total;
+            if (base > 0) {
+              const deltaPct = ((nowTotal - base) / base) * 100;
+              return Math.round(deltaPct * 100) / 100;
+            }
+            break;
+          }
+        }
+        return null;
+      }
+
+      /* --------------------------- 위험도 산정 --------------------------- */
+      /* 간단 점수 합산: 높은 점수일수록 위험 */
+      function judgeRisk({
+        imbalance,
+        collapse5s,
+        divergencePct,
+        spreadBps,
+        bidPct,
+        askPct,
+      }) {
+        let score = 0;
+        // Imbalance: 0.5x 미만 혹은 2.0x 초과면 가중
+        if (imbalance != null) {
+          if (imbalance < 0.5 || imbalance > 2.0) score += 2;
+          if (imbalance < 0.35 || imbalance > 2.85) score += 1;
+        }
+        // Collapse: -20% 이상 급감
+        if (collapse5s != null) {
+          if (collapse5s <= -20) score += 2;
+          if (collapse5s <= -35) score += 1;
+        }
+        // Divergence: 0.5% 초과
+        if (divergencePct != null) {
+          if (Math.abs(divergencePct) >= 0.5) score += 1;
+          if (Math.abs(divergencePct) >= 1.0) score += 1;
+        }
+        // Spread: 3 bps 초과
+        if (spreadBps != null) {
+          if (spreadBps >= 3) score += 1;
+          if (spreadBps >= 6) score += 1;
+        }
+        // 양극단 호가 집중
+        if (bidPct != null && askPct != null) {
+          if (bidPct >= 75 || askPct >= 75) score += 1;
+          if (bidPct >= 85 || askPct >= 85) score += 1;
+        }
+
+        // L0~L3
+        let level = "L0 (정상)";
+        if (score >= 5) level = "L3 (위험)";
+        else if (score >= 3) level = "L2 (주의)";
+        else if (score >= 1) level = "L1 (관심)";
+        return { score, level };
+      }
+
+      /* --------------------------- 루프 --------------------------- */
+      let timer = null;
+
+      async function tick() {
+        const symbol = $("sym").value.trim().toUpperCase();
+        const topN = parseInt($("topn").value, 10);
+
+        try {
+          $("status").textContent = "요청 중…";
+
+          const [depth, futMap, spotMap] = await Promise.all([
+            getMergeDepth(symbol, topN),
+            getFuturesTickerMap(),
+            getSpotTickerMap(),
+          ]);
+
+          const ds = calcDepthStats(depth, topN);
+          const futPx = futMap.get(symbol) ?? null;
+          const spotPx = spotMap.get(symbol) ?? null;
+          const divergencePct =
+            futPx != null && spotPx != null && spotPx > 0
+              ? ((futPx - spotPx) / spotPx) * 100
+              : null;
+
+          const collapse5s = getCollapse5s(ds.totalNotional);
+
+          // Render KPIs
+          $("kpiImb").textContent = x2(ds.imbalance);
+          $("kpiCollapse").textContent = pct2(collapse5s);
+          $("kpiDiv").textContent = pct2(divergencePct);
+          $("kpiSpread").textContent = bps2(ds.spreadBps);
+          $("kpiBidPct").textContent = pct2(ds.bidPct);
+          $("kpiAskPct").textContent = pct2(ds.askPct);
+
+          // Risk level
+          const risk = judgeRisk({
+            imbalance: ds.imbalance,
+            collapse5s,
+            divergencePct,
+            spreadBps: ds.spreadBps,
+            bidPct: ds.bidPct,
+            askPct: ds.askPct,
+          });
+          $("riskBadge").textContent = `Risk: ${risk.level}`;
+          $("riskBadge").className =
+            "badge " +
+            (risk.level.includes("L3")
+              ? "danger"
+              : risk.level.includes("L2")
+                ? "warn"
+                : risk.level.includes("L1")
+                  ? "info"
+                  : "");
+
+          $("status").textContent = "업데이트";
+        } catch (e) {
+          $("status").textContent = "오류";
+          log("에러: " + (e?.message || e));
+        }
+      }
+
+      function start() {
+        stop();
+        tick();
+        const ms = parseInt($("interval").value, 10);
+        timer = setInterval(tick, ms);
+        $("status").textContent = "실행 중";
+      }
+      function stop() {
+        if (timer) {
+          clearInterval(timer);
+          timer = null;
+        }
+        $("status").textContent = "대기";
+      }
+
+      $("startBtn").onclick = start;
+      $("stopBtn").onclick = stop;
+
+      /* --------------------------- [MOD] 자동 시작 --------------------------- */
+      window.addEventListener("load", () => {
+        start();
+      });
+    </script>
+    <!-- ============================ /SCRIPT ============================ -->
+  </body>
+</html>

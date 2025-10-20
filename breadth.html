@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,maximum-scale=1"
+    />
+    <title>Coinben Bot · Breadth Module</title>
+    <!-- [MOD] Link local breadth.css in the same folder -->
+    <link rel="stylesheet" href="css/core.css" />
+    <link rel="stylesheet" href="css/breadth.css" />
+    <script>
+      /* [MOD] Hide header when ?embed=1 */
+      const _p = new URLSearchParams(location.search);
+      const EMBED = _p.get("embed") === "1";
+      document.documentElement.dataset.embed = EMBED ? "1" : "0";
+    </script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="breadth-wrap">
+        <!-- ===== Futures ===== -->
+        <div class="bcard" id="futCard">
+          <div class="bhead">
+            <div class="btitle">
+              USDT-Futures · Up / Flat / Down Distribution
+            </div>
+            <div class="bctrl">
+              <label style="color: var(--muted); font-size: 12px">Window</label>
+              <!-- [MOD] TF options include 30m / 1h / 4h / 1d -->
+              <select id="futTf" class="bsel">
+                <option value="1">1m</option>
+                <option value="3">3m</option>
+                <option value="5" selected>5m</option>
+                <option value="10">10m</option>
+                <option value="15">15m</option>
+                <option value="30">30m</option>
+                <option value="60">1h</option>
+                <option value="240">4h</option>
+                <option value="1440">1D</option>
+              </select>
+              <span id="futStatus" class="badge">Warming up</span>
+            </div>
+          </div>
+          <div class="bar">
+            <div id="futUp" class="up" style="width: 0%"></div>
+            <div id="futMid" class="mid" style="width: 0%"></div>
+            <div id="futDn" class="dn" style="width: 0%"></div>
+          </div>
+          <div class="bmetrics" style="margin-top: 8px">
+            <div id="futUpPill" class="pill">
+              Up(%) <span class="v" id="futUpPct">0</span>
+            </div>
+            <div id="futMidPill" class="pill">
+              Flat(%) <span class="v" id="futZPct">0</span>
+            </div>
+            <div id="futDnPill" class="pill">
+              Down(%) <span class="v" id="futDnPct">0</span>
+            </div>
+            <div class="pill">
+              Up count <span class="v" id="futUpCnt">0</span>
+            </div>
+            <div class="pill">
+              Flat count <span class="v" id="futZCnt">0</span>
+            </div>
+            <div class="pill">
+              Down count <span class="v" id="futDnCnt">0</span>
+            </div>
+            <div class="pill">Total <span class="v" id="futTotal">0</span></div>
+          </div>
+        </div>
+
+        <!-- ===== Spot ===== -->
+        <div class="bcard" id="spotCard">
+          <div class="bhead">
+            <div class="btitle">SPOT · Up / Flat / Down Distribution</div>
+            <div class="bctrl">
+              <label style="color: var(--muted); font-size: 12px">Window</label>
+              <select id="spotTf" class="bsel">
+                <option value="1">1m</option>
+                <option value="3">3m</option>
+                <option value="5" selected>5m</option>
+                <option value="10">10m</option>
+                <option value="15">15m</option>
+                <option value="30">30m</option>
+                <option value="60">1h</option>
+                <option value="240">4h</option>
+                <option value="1440">1d</option>
+              </select>
+              <span id="spotStatus" class="badge">Warming up</span>
+            </div>
+          </div>
+          <div class="bar">
+            <div id="spotUp" class="up" style="width: 0%"></div>
+            <div id="spotMid" class="mid" style="width: 0%"></div>
+            <div id="spotDn" class="dn" style="width: 0%"></div>
+          </div>
+          <div class="bmetrics" style="margin-top: 8px">
+            <div id="spotUpPill" class="pill">
+              Up(%) <span class="v" id="spotUpPct">0</span>
+            </div>
+            <div id="spotMidPill" class="pill">
+              Flat(%) <span class="v" id="spotZPct">0</span>
+            </div>
+            <div id="spotDnPill" class="pill">
+              Down(%) <span class="v" id="spotDnPct">0</span>
+            </div>
+            <div class="pill">
+              Up count <span class="v" id="spotUpCnt">0</span>
+            </div>
+            <div class="pill">
+              Flat count <span class="v" id="spotZCnt">0</span>
+            </div>
+            <div class="pill">
+              Down count <span class="v" id="spotDnCnt">0</span>
+            </div>
+            <div class="pill">
+              Total <span class="v" id="spotTotal">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================ SCRIPT ============================ -->
+    <script>
+      /* ----------------------- Constants ----------------------- */
+      const PRODUCT_TYPE = "USDT-FUTURES"; // Bitget v2 parameter
+
+      const cfg = {
+        pollMs: 500,
+        futUrl: (productType) =>
+          `https://api.bitget.com/api/v2/mix/market/tickers?productType=${productType}&_=${Date.now()}`,
+        spotUrl: () =>
+          `https://api.bitget.com/api/v2/spot/market/tickers?_=${Date.now()}`,
+      };
+
+      const futHist = new Map(),
+        spotHist = new Map();
+      /* [MOD] Default TFs are 5m; dropdown adds 30m/1h/4h/1d */
+      let futWindowMin = 5,
+        spotWindowMin = 5;
+
+      /* ----------------------- UI wiring ----------------------- */
+      document.addEventListener("DOMContentLoaded", () => {
+        if (document.documentElement.dataset.embed === "1") {
+          document
+            .querySelectorAll("[data-hide-in-embed]")
+            .forEach((el) => (el.style.display = "none"));
+        }
+        document.getElementById("futTf").addEventListener("change", (e) => {
+          futWindowMin = +e.target.value;
+          render();
+        });
+        document.getElementById("spotTf").addEventListener("change", (e) => {
+          spotWindowMin = +e.target.value;
+          render();
+        });
+        poll();
+      });
+
+      /* ----------------------- Utilities ----------------------- */
+      function trimHistory(queue, keepMin) {
+        const cutoff = Date.now() - keepMin * 60 * 1000;
+        while (queue.length && queue[0].ts < cutoff) queue.shift();
+      }
+      function boundaryStart(windowMin) {
+        const tf = windowMin * 60 * 1000;
+        const now = Date.now();
+        return Math.floor(now / tf) * tf;
+      }
+      function baseAtOrAfter(queue, t0) {
+        if (!queue || !queue.length) return null;
+        let lo = 0,
+          hi = queue.length - 1,
+          ans = null;
+        while (lo <= hi) {
+          const mid = (lo + hi) >> 1;
+          if (queue[mid].ts >= t0) {
+            ans = queue[mid];
+            hi = mid - 1;
+          } else lo = mid + 1;
+        }
+        return ans ? ans.price : null;
+      }
+      function baseAtOrBefore(queue, t0) {
+        if (!queue || !queue.length) return null;
+        let lo = 0,
+          hi = queue.length - 1,
+          ans = null;
+        while (lo <= hi) {
+          const mid = (lo + hi) >> 1;
+          if (queue[mid].ts <= t0) {
+            ans = queue[mid];
+            lo = mid + 1;
+          } else hi = mid - 1;
+        }
+        return ans ? ans.price : null;
+      }
+
+      /* ----------------------- Compute & Render ----------------------- */
+      function compute(hist, windowMin) {
+        const t0 = boundaryStart(windowMin);
+        let up = 0,
+          dn = 0,
+          flat = 0,
+          total = 0;
+        for (const [, q] of hist.entries()) {
+          if (!q || q.length < 1) continue;
+          let base = baseAtOrAfter(q, t0);
+          if (base == null) base = baseAtOrBefore(q, t0);
+          const last = q[q.length - 1].price;
+          if (base == null || !isFinite(last)) continue;
+          total++;
+          if (last > base) up++;
+          else if (last < base) dn++;
+          else flat++;
+        }
+        return { up, dn, flat, total };
+      }
+      function drawBar(prefix, data) {
+        const upPct = data.total ? Math.round((data.up / data.total) * 100) : 0;
+        const midPct = data.total
+          ? Math.round((data.flat / data.total) * 100)
+          : 0;
+        const dnPct = data.total ? Math.round((data.dn / data.total) * 100) : 0;
+
+        const upEl = document.getElementById(prefix + "Up");
+        const midEl = document.getElementById(prefix + "Mid");
+        const dnEl = document.getElementById(prefix + "Dn");
+
+        upEl.style.width = upPct + "%";
+        upEl.style.left = "0%";
+        midEl.style.width = midPct + "%";
+        midEl.style.left = upPct + "%";
+        dnEl.style.width = dnPct + "%";
+        dnEl.style.left = upPct + midPct + "%";
+
+        document.getElementById(prefix + "UpPct").textContent = upPct;
+        document.getElementById(prefix + "ZPct").textContent = midPct;
+        document.getElementById(prefix + "DnPct").textContent = dnPct;
+
+        document.getElementById(prefix + "UpCnt").textContent = data.up;
+        document.getElementById(prefix + "ZCnt").textContent = data.flat;
+        document.getElementById(prefix + "DnCnt").textContent = data.dn;
+        document.getElementById(prefix + "Total").textContent = data.total;
+      }
+
+      function pillTitles(prefix, windowMin, status, d) {
+        const pct = (n) => (d.total ? Math.round((n / d.total) * 100) : 0);
+        const head = `total=${d.total} · window=${formatTF(windowMin)} · status=${status}`;
+        document.getElementById(prefix + "UpPill").title =
+          `Up: ${pct(d.up)}%\n${head}`;
+        document.getElementById(prefix + "MidPill").title =
+          `Flat: ${pct(d.flat)}%\n${head}`;
+        document.getElementById(prefix + "DnPill").title =
+          `Down: ${pct(d.dn)}%\n${head}`;
+      }
+
+      function formatTF(min) {
+        if (min === 1440) return "1d";
+        if (min % 60 === 0) {
+          if (min === 60) return "1h";
+          if (min === 240) return "4h";
+          return min / 60 + "h";
+        }
+        return min + "m";
+      }
+
+      function render() {
+        const f = compute(futHist, futWindowMin);
+        const s = compute(spotHist, spotWindowMin);
+
+        drawBar("fut", f);
+        drawBar("spot", s);
+
+        pillTitles(
+          "fut",
+          futWindowMin,
+          document.getElementById("futStatus").textContent,
+          f,
+        );
+        pillTitles(
+          "spot",
+          spotWindowMin,
+          document.getElementById("spotStatus").textContent,
+          s,
+        );
+      }
+
+      /* ----------------------- Polling ----------------------- */
+      async function poll() {
+        try {
+          const [fut, spot] = await Promise.allSettled([
+            fetchJSON(cfg.futUrl(PRODUCT_TYPE)),
+            fetchJSON(cfg.spotUrl()),
+          ]);
+          const now = Date.now();
+
+          if (fut.status === "fulfilled" && Array.isArray(fut.value?.data)) {
+            for (const t of fut.value.data) {
+              const sym = String(t.symbol || t.instId || "").toUpperCase();
+              const px = Number(
+                t.lastPr ?? t.last ?? t.close ?? t.lastPrice ?? t.closePrice,
+              );
+              if (!sym || !isFinite(px)) continue;
+              if (!futHist.has(sym)) futHist.set(sym, []);
+              const q = futHist.get(sym);
+              q.push({ ts: now, price: px });
+              trimHistory(q, Math.max(20, futWindowMin * 6));
+            }
+            document.getElementById("futStatus").textContent = "Updated";
+          } else {
+            document.getElementById("futStatus").textContent =
+              "Error/Warming up";
+          }
+
+          if (spot.status === "fulfilled" && Array.isArray(spot.value?.data)) {
+            for (const t of spot.value.data) {
+              const sym = String(t.symbol || t.instId || "").toUpperCase();
+              const px = Number(
+                t.lastPr ?? t.last ?? t.close ?? t.lastPrice ?? t.closePrice,
+              );
+              if (!sym || !isFinite(px)) continue;
+              if (!spotHist.has(sym)) spotHist.set(sym, []);
+              const q = spotHist.get(sym);
+              q.push({ ts: now, price: px });
+              trimHistory(q, Math.max(20, spotWindowMin * 6));
+            }
+            document.getElementById("spotStatus").textContent = "Updated";
+          } else {
+            document.getElementById("spotStatus").textContent =
+              "Error/Warming up";
+          }
+
+          render();
+        } catch (e) {
+          document.getElementById("futStatus").textContent = "Error";
+          document.getElementById("spotStatus").textContent = "Error";
+          console.error("breadth poll error", e);
+        } finally {
+          setTimeout(poll, cfg.pollMs);
+        }
+      }
+
+      /* ----------------------- Fetch helper ----------------------- */
+      async function fetchJSON(url, opt) {
+        const res = await fetch(url, opt);
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      }
+    </script>
+  </body>
+</html>

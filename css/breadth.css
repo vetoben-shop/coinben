@@ -1,0 +1,176 @@
+/* =========================================================
+   BREADTH MODULE STYLES — Up/Down distribution
+   (If your theme variables are missing, add them here.)
+   ========================================================= */
+
+/* [MOD] Minimal fallback CSS variables (safe defaults) */
+:root {
+  --panel: #11161c;
+  --surface: #0b1016;
+  --bar-bg: #0e141b;
+  --line: #1e2a36;
+  --chip: #0d141b;
+  --ink: #e7edf3;
+  --muted: #8aa0b6;
+  --up: #1f6f43;
+  --mid: #4b5663;
+  --dn: #8c2834;
+}
+
+/* =============== Basic layout scaffolding (optional) =============== */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+.header .header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 1200px;
+  width: 100%;
+}
+.header .brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  font-weight: 700;
+}
+.header .brand .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #21c27a;
+}
+.header .nav a {
+  color: var(--muted);
+  text-decoration: none;
+  margin-left: 12px;
+}
+.header .nav a.active {
+  color: var(--ink);
+}
+.container {
+  max-width: 1200px;
+  margin: 16px auto;
+  padding: 0 12px;
+}
+
+/* ===================== Layout ===================== */
+.breadth-wrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 8px 0 12px;
+}
+
+.bcard {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.bhead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.btitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.bctrl {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bsel {
+  appearance: none;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--ink);
+  /* [MOD] for wider labels like "1d" */
+  min-width: 96px;
+}
+
+.badge {
+  background: var(--chip);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 12px;
+}
+
+.bar {
+  position: relative;
+  width: 100%;
+  height: 20px;
+  background: var(--bar-bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.bar .up {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: var(--up);
+}
+.bar .mid {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: var(--mid);
+}
+.bar .dn {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: var(--dn);
+}
+
+.bmetrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bmetrics .pill {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 3px 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.bmetrics .pill .v {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* ===================== Responsive ===================== */
+@media (max-width: 1200px) {
+  .breadth-wrap {
+    grid-template-columns: 1fr;
+  }
+}

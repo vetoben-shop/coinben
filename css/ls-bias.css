@@ -1,0 +1,167 @@
+/* =========================================================
+   LONG/SHORT BIAS MODULE STYLES — Positions vs Accounts
+   Depends on: css/core.css (theme tokens)
+   ========================================================= */
+
+/* ============== Heading badges ============== */
+.badge.mapInfo {
+  background: var(--panel);
+  color: var(--accent);
+}
+.badge.small {
+  font-size: 11px;
+  padding: 2px 6px;
+}
+.badge.warn {
+  color: var(--warn);
+  border-color: var(--warn);
+}
+
+/* ============== Toolbar ============== */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  margin-top: 8px;
+}
+.toolbar label {
+  color: var(--muted);
+  font-size: 12px;
+  margin-right: 4px;
+}
+.toolbar input,
+.toolbar select {
+  background: #0f1620;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 13px;
+  height: 28px;
+  min-width: 90px;
+}
+.toolbar button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: 0.2s ease;
+  height: 28px;
+}
+.toolbar button:hover {
+  opacity: 0.9;
+}
+.toolbar .badge {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+.toolbar .badge b {
+  color: var(--ink);
+}
+
+/* ============== KPI / Pills ============== */
+.kpi {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.kpi .pill {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.kpi .pill .v {
+  margin-left: 6px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* ============== Table ============== */
+.tableWrap {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  margin-top: 12px;
+  overflow: hidden;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  color: var(--ink);
+}
+thead {
+  background: #101621;
+  color: var(--muted);
+  font-weight: 500;
+}
+th,
+td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+  text-align: center;
+}
+th.right,
+td.right {
+  text-align: right;
+}
+td.center {
+  text-align: center;
+}
+
+tbody tr.groupHead {
+  background: rgba(96, 165, 250, 0.06);
+}
+tbody tr:hover {
+  background: rgba(96, 165, 250, 0.09);
+}
+
+/* ============== Signal coloring (class-based) ============== */
+td.signal {
+  font-weight: 600;
+}
+td.signal.none {
+  color: var(--muted);
+}
+td.signal.watch {
+  color: var(--accent);
+}
+td.signal.strong {
+  color: var(--good);
+}
+
+/* ============== Utility / Effects ============== */
+.blink {
+  animation: blink 1.2s infinite;
+}
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (max-width: 1200px) {
+  table {
+    font-size: 12px;
+  }
+  .toolbar {
+    gap: 8px;
+  }
+}

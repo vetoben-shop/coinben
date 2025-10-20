@@ -1,0 +1,408 @@
+/* ==========================================================================
+   trade.css  (FIXED)
+   - Apply dark theme sitewide
+   - Ensure readable text on inputs/labels
+   - Correct/robust color tokens (with fallbacks)
+   - No HTML/JS changes required
+   ========================================================================== */
+
+/* ----------------------------- Strong Reset ------------------------------ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html,
+body {
+  height: 100%;
+}
+html {
+  color-scheme: dark;
+} /* help browsers pick dark default UI */
+body {
+  margin: 0;
+  font-family:
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    Inter,
+    Arial,
+    "Apple SD Gothic Neo",
+    "Malgun Gothic",
+    sans-serif;
+  line-height: 1.45;
+  letter-spacing: 0.2px;
+  background: #0b0f14; /* fallback */
+  background:
+    radial-gradient(
+      1200px 800px at 20% -10%,
+      #0e1217 0%,
+      #0b0f14 40%,
+      #090d12 100%
+    ),
+    #0b0f14;
+  color: #e8eef7;
+}
+
+/* Prevent browser autofill from making inputs unreadable */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill {
+  -webkit-text-fill-color: #e8eef7;
+  -webkit-box-shadow: 0 0 0px 1000px #0f141b inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+/* ----------------------------- Color Tokens ------------------------------ */
+:root {
+  /* === match risk.css palette === */
+  --bg: #0b0f14; /* page background */
+  --surface: #0f141a; /* panel 배경 */
+  --surface-2: #0b1117; /* 버튼/인풋 배경 */
+  --border: #1e2a36; /* 경계선 */
+  --ink: #e6edf3; /* 기본 글자색 */
+  --muted: #9fb0c3; /* 보조 글자색 */
+
+  --accent: #8ab4ff; /* 링크/하이라이트 */
+  --focus: #3b82f6; /* 포커스 테두리 */
+  --accent-2: #19c37d; /* 성공(초록) */
+  --warn: #f59e0b; /* 경고(노랑) */
+  --danger: #ef4444; /* 위험(빨강) */
+
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --radius: 14px;
+  --radius-sm: 10px;
+  --gap: 12px;
+  --fs: clamp(12px, 1vw, 15px);
+}
+
+/* ------------------------------ Base Typography -------------------------- */
+body {
+  font-size: var(--fs);
+  color: var(--ink);
+}
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+/* ------------------------------ App Canvas ------------------------------- */
+.trade-app {
+  /* responsive container (fallback if HTML still has fixed size) */
+  max-width: 1200px;
+  min-height: 700px;
+  margin: 24px auto;
+  padding: 18px;
+  box-sizing: border-box;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
+    var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+.trade-app.scrollable {
+  overflow: auto;
+}
+
+/* ------------------------------ Header ----------------------------------- */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.app-title {
+  font-size: clamp(18px, 1.6vw, 22px);
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+.linkbar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.linkbar a {
+  color: var(--accent);
+  font-weight: 600;
+}
+.linkbar a.active {
+  text-decoration: underline;
+}
+
+/* ------------------------------ Panels ----------------------------------- */
+.panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0)),
+    var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  margin-bottom: 14px;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.25);
+}
+.panel-title {
+  margin: 0 0 10px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ------------------------------ Grid System ------------------------------ */
+.grid-2 {
+  display: grid;
+  gap: var(--gap);
+  grid-template-columns: repeat(2, 1fr);
+}
+.grid-3 {
+  display: grid;
+  gap: var(--gap);
+  grid-template-columns: repeat(3, 1fr);
+}
+
+@media (min-width: 1280px) {
+  .grid-3 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+@media (max-width: 980px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+  .grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .grid-2,
+  .grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ------------------------------ Forms ------------------------------------ */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.label {
+  font-size: 0.85rem;
+  color: var(--muted);
+  letter-spacing: 0.25px;
+  user-select: none;
+}
+
+/* Use class hooks if present; also style raw inputs/selects inside panels */
+.input,
+.select,
+.textarea,
+.panel input,
+.panel select,
+.panel textarea {
+  appearance: none;
+  background: #0f141b; /* readable on dark */
+  color: #e8eef7; /* ensure visible text */
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  outline: none;
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease,
+    background 0.16s ease,
+    color 0.16s ease;
+}
+
+/* Placeholders should be muted but readable */
+::placeholder {
+  color: #92a2b6;
+  opacity: 1;
+}
+.panel input::placeholder,
+.panel textarea::placeholder {
+  color: #92a2b6;
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus,
+.panel input:focus,
+.panel select:focus,
+.panel textarea:focus {
+  border-color: var(--focus);
+  box-shadow: 0 0 0 3px rgba(123, 176, 255, 0.18);
+  background: #0f161e;
+  color: #f2f7ff;
+}
+
+/* For disabled or readonly states */
+input[disabled],
+select[disabled],
+textarea[disabled] {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+/* Inline input + select row */
+.inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ------------------------------ Buttons ---------------------------------- */
+.btn-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.btn,
+.panel button {
+  appearance: none;
+  border: 1px solid var(--border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0)),
+    var(--surface-2);
+  color: var(--ink);
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition:
+    transform 0.16s ease,
+    border-color 0.16s ease,
+    background 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.btn:hover,
+.panel button:hover {
+  transform: translateY(-1px);
+  border-color: #384355;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+.btn:active,
+.panel button:active {
+  transform: translateY(0);
+}
+
+.btn-primary {
+  border-color: rgba(76, 137, 255, 0.6);
+  background:
+    linear-gradient(180deg, rgba(76, 137, 255, 0.28), rgba(76, 137, 255, 0.12)),
+    #1a2540;
+}
+.btn-success {
+  border-color: rgba(43, 209, 178, 0.5);
+  background:
+    linear-gradient(180deg, rgba(43, 209, 178, 0.28), rgba(43, 209, 178, 0.12)),
+    #153a33;
+}
+.btn-warning {
+  border-color: rgba(255, 204, 102, 0.45);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 204, 102, 0.28),
+      rgba(255, 204, 102, 0.12)
+    ),
+    #3a2f18;
+  color: #ffe7b3;
+}
+.btn-danger {
+  border-color: rgba(255, 107, 107, 0.5);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 107, 107, 0.28),
+      rgba(255, 107, 107, 0.12)
+    ),
+    #3b1c1f;
+}
+
+/* ------------------------------ Badges ----------------------------------- */
+.badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  background: #121821;
+  color: var(--muted);
+}
+
+/* ------------------------------ Footer ----------------------------------- */
+.app-footer {
+  margin-top: 14px;
+  padding-top: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.18));
+}
+.small-hint {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ------------------------------ Helpers ---------------------------------- */
+.mt-12 {
+  margin-top: 12px;
+}
+.mb-8 {
+  margin-bottom: 8px;
+}
+.note {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ------------------------------ Scrollbars ------------------------------- */
+.trade-app * {
+  scrollbar-width: thin;
+  scrollbar-color: #2c3645 transparent;
+}
+.trade-app *::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+.trade-app *::-webkit-scrollbar-track {
+  background: transparent;
+}
+.trade-app *::-webkit-scrollbar-thumb {
+  background: #2c3645;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.trade-app *::-webkit-scrollbar-thumb:hover {
+  background: #3a4557;
+}

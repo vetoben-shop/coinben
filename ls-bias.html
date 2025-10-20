@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,maximum-scale=1"
+    />
+    <title>Coinben Bot — Long/Short Bias Module</title>
+
+    <!-- [MOD] stylesheet paths (your folder: D:\bitget\bot\coinben\css\) -->
+    <link rel="stylesheet" href="css/core.css" />
+    <link rel="stylesheet" href="css/ls-bias.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>
+        Long/Short Bias — Positions vs Accounts
+        <span id="periodBadge" class="badge mapInfo">period: <b>5m</b></span>
+        <span id="granBadge" class="badge small"></span>
+      </h1>
+
+      <!-- [MOD] English-only UI + extended TF (1m~1d) -->
+      <div class="toolbar">
+        <div>
+          <label>Symbols (comma):</label>
+          <input
+            id="symInput"
+            type="text"
+            placeholder="e.g. BTCUSDT,ETHUSDT"
+            value="BTCUSDT"
+          />
+        </div>
+        <div>
+          <label>period:</label>
+          <select id="periodSel">
+            <option value="1m">1m</option>
+            <option value="3m">3m</option>
+            <option value="5m" selected>5m</option>
+            <option value="10m">10m</option>
+            <option value="15m">15m</option>
+            <option value="30m">30m</option>
+            <option value="1h">1h</option>
+            <option value="4h">4h</option>
+            <option value="1d">1d</option>
+          </select>
+        </div>
+        <div>
+          <label>depth:</label>
+          <select id="depthSel">
+            <option value="20">20</option>
+            <option value="50" selected>50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+        <div>
+          <label>Interval:</label>
+          <select id="intervalSel">
+            <option value="2000" selected>2s</option>
+            <option value="5000">5s</option>
+            <option value="10000">10s</option>
+          </select>
+        </div>
+        <div class="badge">Brand: <b>Coinben Bot</b></div>
+        <button id="applyBtn" type="button">Apply</button>
+        <button id="startBtn" type="button">Start</button>
+        <button id="stopBtn" type="button">Stop</button>
+        <span id="status" class="badge">Idle</span>
+      </div>
+
+      <div class="kpi" id="kpi"></div>
+
+      <div class="tableWrap">
+        <table id="tbl">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Sym</th>
+              <th class="center">Basis</th>
+              <th>FR%</th>
+              <th>Long %</th>
+              <th>Short %</th>
+              <th>OB Bid %</th>
+              <th>OB Ask %</th>
+              <th class="right">OBB$</th>
+              <th class="right">OBA$</th>
+              <th class="right">OBT$</th>
+              <th class="right">OI$</th>
+              <th>MM</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ============================ SCRIPT ============================ -->
+    <script>
+      /* ======================= Constants ======================= */
+      const PRODUCT_TYPE = "USDT-FUTURES"; // Bitget v2 productType (uppercase)
+
+      /* ======================= Number formatters ======================= */
+      const nf0 = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+      const nf2 = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
+      const pf2 = (x) => (x == null ? "-" : nf2.format(x) + "%");
+
+      /* ======================= State / Helpers ======================= */
+      let timer = null,
+        aborter = null;
+      const $id = (id) => document.getElementById(id);
+
+      function ok(p) {
+        return p.status === "fulfilled";
+      }
+
+      /* [MOD] UI(1m~1d) → Bitget LS API period mapping */
+      function mapPeriodForLS(ui) {
+        switch (ui) {
+          case "1m":
+          case "3m":
+          case "5m":
+            return "5min";
+          case "10m":
+          case "15m":
+            return "15min";
+          case "30m":
+            return "30min";
+          case "1h":
+            return "1hour";
+          case "4h":
+            return "4hour";
+          case "1d":
+            return "1day";
+          default:
+            return "5min";
+        }
+      }
+
+      /* [MOD] Badge shows UI period and actual API call period */
+      function updateBadges(uiP) {
+        const mapped = mapPeriodForLS(uiP);
+        $id("periodBadge").innerHTML = `period: <b>${uiP}</b>`;
+        const g = $id("granBadge");
+        g.textContent = uiP !== mapped ? `call: ${mapped}` : "";
+        g.className = "badge small " + (uiP !== mapped ? "warn" : "");
+      }
+
+      /* ======================= [MOD] Futures ticker cache ======================= */
+      const futTickerCache = { ts: 0, map: new Map() };
+
+      async function loadFuturesTickers() {
+        const url = `https://api.bitget.com/api/v2/mix/market/tickers?productType=${PRODUCT_TYPE}&_=${Date.now()}`;
+        const json = await fetchJSON(url);
+        futTickerCache.map.clear();
+        const arr = Array.isArray(json?.data) ? json.data : [];
+        for (const t of arr) {
+          const sym = String(t.symbol || t.instId || "").toUpperCase();
+          const last = Number(
+            t.lastPr ?? t.last ?? t.close ?? t.lastPrice ?? t.closePrice,
+          );
+          const fr = t.fundingRate != null ? Number(t.fundingRate) * 100 : null; // may be missing
+          if (!sym) continue;
+          futTickerCache.map.set(sym, {
+            last,
+            fundingPct: isFinite(fr) ? fr : null,
+          });
+        }
+        futTickerCache.ts = Date.now();
+      }
+
+      function getFundingPct(symbol) {
+        const rec = futTickerCache.map.get(String(symbol).toUpperCase());
+        return rec ? (rec.fundingPct ?? null) : null;
+      }
+
+      /* ======================= Events ======================= */
+      document.addEventListener("DOMContentLoaded", () => {
+        $id("applyBtn")?.addEventListener("click", () => {
+          updateBadges($id("periodSel").value);
+          $id("status").textContent = "Applied";
+        });
+        $id("startBtn")?.addEventListener("click", start);
+        $id("stopBtn")?.addEventListener("click", stop);
+        updateBadges($id("periodSel").value);
+        start(); // auto-start
+      });
+
+      /* ======================= Start / Stop ======================= */
+      function start() {
+        stop();
+        const iv = parseInt($id("intervalSel").value, 10);
+        fetchAndRender();
+        timer = setInterval(fetchAndRender, iv);
+        $id("status").textContent = "Requesting...";
+      }
+      function stop() {
+        if (timer) {
+          clearInterval(timer);
+          timer = null;
+        }
+        if (aborter) {
+          aborter.abort();
+          aborter = null;
+        }
+        $id("status").textContent = "Idle";
+      }
+
+      /* ======================= Fetch & Render ======================= */
+      async function fetchAndRender() {
+        try {
+          // ticker cache refresh (10s)
+          if (Date.now() - (futTickerCache.ts || 0) > 10000) {
+            await loadFuturesTickers();
+          }
+
+          aborter = new AbortController();
+          const rows = [];
+          const kpi = { cnt: 0, totalOI: 0, strong: 0, watch: 0, nodata: 0 };
+
+          const syms = $id("symInput")
+            .value.split(",")
+            .map((s) => s.trim().toUpperCase())
+            .filter(Boolean);
+          if (!syms.length) {
+            $id("status").textContent = "No symbols";
+            return;
+          }
+
+          const uiPeriod = $id("periodSel").value;
+          const apiPeriod = mapPeriodForLS(uiPeriod);
+          const depthN = parseInt($id("depthSel").value, 10);
+
+          for (const symbol of syms) {
+            try {
+              const [pos, acc] = await Promise.allSettled([
+                getPositionLongShort(symbol, apiPeriod, aborter.signal),
+                getAccountLongShort(symbol, apiPeriod, aborter.signal),
+              ]);
+
+              const posRat = extractPosRatio(ok(pos) ? pos.value : null);
+              const accRat = extractAccRatio(ok(acc) ? acc.value : null);
+
+              const depth = await getMergeDepth(symbol, depthN, aborter.signal);
+              const ob = calcOrderbookStats(depth, depthN);
+
+              let oiUSDT = null;
+              try {
+                const oi = await getOpenInterest(symbol, aborter.signal);
+                oiUSDT = Number(
+                  oi?.data?.[0]?.amount || oi?.data?.[0]?.openInterest || null,
+                );
+              } catch (e) {
+                /* ignore */
+              }
+
+              const now = new Date().toLocaleString();
+              const fundingPct = getFundingPct(symbol);
+
+              const posSignal = judgeMM({
+                spreadBps: ob.spreadBps,
+                obBidPct: ob.bidPct,
+                longPct: posRat?.longPct ?? null,
+                oiUSDT,
+              });
+              const accSignal = judgeMM({
+                spreadBps: ob.spreadBps,
+                obBidPct: ob.bidPct,
+                longPct: accRat?.longPct ?? null,
+                oiUSDT,
+              });
+
+              if (posRat == null && accRat == null) kpi.nodata++;
+
+              rows.push({
+                groupHead: true,
+                ts: now,
+                symbol,
+                basis: "Positions",
+                funding: fundingPct,
+                longPct: posRat?.longPct ?? null,
+                shortPct: posRat?.shortPct ?? null,
+                obBidPct: ob.bidPct,
+                obAskPct: ob.askPct,
+                obBidNotional: ob.bidNotional,
+                obAskNotional: ob.askNotional,
+                obTotalNotional: ob.totalNotional,
+                oiUSDT,
+                signal: posSignal,
+              });
+              rows.push({
+                groupHead: false,
+                ts: now,
+                symbol,
+                basis: "Accounts",
+                funding: fundingPct,
+                longPct: accRat?.longPct ?? null,
+                shortPct: accRat?.shortPct ?? null,
+                obBidPct: ob.bidPct,
+                obAskPct: ob.askPct,
+                obBidNotional: ob.bidNotional,
+                obAskNotional: ob.askNotional,
+                obTotalNotional: ob.totalNotional,
+                oiUSDT,
+                signal: accSignal,
+              });
+
+              kpi.cnt++;
+              if (oiUSDT) kpi.totalOI += oiUSDT;
+              const rank = { None: 0, Watch: 1, Strong: 2 };
+              const maxL =
+                rank[posSignal.level] >= rank[accSignal.level]
+                  ? posSignal.level
+                  : accSignal.level;
+              if (maxL === "Strong") kpi.strong++;
+              if (maxL === "Watch") kpi.watch++;
+
+              $id("status").textContent = "Updated";
+            } catch (err) {
+              console.error(symbol, err);
+              $id("status").textContent = "Error (see console)";
+            }
+          }
+
+          render(rows);
+          renderKPI(kpi);
+        } catch (outer) {
+          console.error("fetchAndRender outer", outer);
+          $id("status").textContent = "Error (see console)";
+        }
+      }
+
+      function render(rows) {
+        const tbody = $id("tbody");
+        const nf0s = (v) => (v != null ? nf0.format(v) : "-");
+        tbody.innerHTML = rows
+          .map(
+            (r) => `
+    <tr class='${r.groupHead ? "groupHead" : ""}'>
+      <td>${r.ts}</td>
+      <td>${r.symbol}</td>
+      <td class='center'>${r.basis}</td>
+      <td>${
+        r.funding == null || !isFinite(r.funding)
+          ? "-"
+          : (Math.abs(r.funding) < 1e-8
+              ? "0"
+              : (r.funding > 0 ? "+" : "") + nf2.format(r.funding)) + "%"
+      }</td>
+      <td>${r.longPct == null ? "-" : pf2(r.longPct)}</td>
+      <td>${r.shortPct == null ? "-" : pf2(r.shortPct)}</td>
+      <td>${r.obBidPct == null ? "-" : pf2(r.obBidPct)}</td>
+      <td>${r.obAskPct == null ? "-" : pf2(r.obAskPct)}</td>
+      <td class='right'>${nf0s(r.obBidNotional)}</td>
+      <td class='right'>${nf0s(r.obAskNotional)}</td>
+      <td class='right'>${nf0s(r.obTotalNotional)}</td>
+      <td class='right'>${nf0s(r.oiUSDT)}</td>
+      <td class='signal ${r.signal.cls}'>${r.signal.level}</td>
+    </tr>
+  `,
+          )
+          .join("");
+      }
+
+      function renderKPI({ cnt, totalOI, strong, watch, nodata }) {
+        $id("kpi").innerHTML = `
+    <div class='pill'>Symbols <span class='v'>${cnt}</span></div>
+    <div class='pill'>Strong <span class='v' style='color:var(--good)'>${strong}</span></div>
+    <div class='pill'>Watch <span class='v' style='color:#60a5fa'>${watch}</span></div>
+    <div class='pill'>Total OI (USDT) <span class='v'>${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(totalOI || 0)}</span></div>
+    <div class='pill' title='Symbols where LS APIs returned empty'>No data <span class='v'>${nodata}</span></div>
+  `;
+      }
+
+      /* ======================= MM heuristic ======================= */
+      function judgeMM({ spreadBps, obBidPct, longPct, oiUSDT }) {
+        let score = 0;
+        if (spreadBps !== null && spreadBps <= 2) score++;
+        if (obBidPct !== null && obBidPct >= 45 && obBidPct <= 55) score++;
+        if (longPct !== null && longPct >= 47 && longPct <= 53) score++;
+        if (oiUSDT !== null && oiUSDT >= 10_000_000) score++;
+        if (score >= 4) return { level: "Strong", cls: "strong" };
+        if (score >= 2) return { level: "Watch", cls: "watch" };
+        return { level: "None", cls: "none" };
+      }
+
+      /* ======================= API helpers ======================= */
+      async function getPositionLongShort(symbol, period, signal) {
+        const url = new URL(
+          "https://api.bitget.com/api/v2/mix/market/position-long-short",
+        );
+        url.searchParams.set("symbol", symbol);
+        url.searchParams.set("period", period); // 5min/15min/30min/1hour/4hour/1day
+        return fetchJSON(url.toString(), { signal });
+      }
+      async function getAccountLongShort(symbol, period, signal) {
+        const url = new URL(
+          "https://api.bitget.com/api/v2/mix/market/account-long-short",
+        );
+        url.searchParams.set("symbol", symbol);
+        url.searchParams.set("period", period);
+        return fetchJSON(url.toString(), { signal });
+      }
+      async function getMergeDepth(symbol, limit, signal) {
+        const url = new URL(
+          "https://api.bitget.com/api/v2/mix/market/merge-depth",
+        );
+        url.searchParams.set("productType", PRODUCT_TYPE);
+        url.searchParams.set("symbol", symbol);
+        url.searchParams.set("precision", "scale0");
+        url.searchParams.set("limit", String(limit));
+        return fetchJSON(url.toString(), { signal });
+      }
+      async function getOpenInterest(symbol, signal) {
+        const url = new URL(
+          "https://api.bitget.com/api/v2/mix/market/open-interest",
+        );
+        url.searchParams.set("productType", PRODUCT_TYPE);
+        url.searchParams.set("symbol", symbol);
+        return fetchJSON(url.toString(), { signal });
+      }
+      async function fetchJSON(url, opt) {
+        const res = await fetch(url, opt);
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      }
+      function safeArr(d) {
+        return Array.isArray(d) ? d : [];
+      }
+      function extractPosRatio(json) {
+        const arr = safeArr(json?.data);
+        if (!arr.length) return null;
+        const last = arr[arr.length - 1];
+        const long = Number(last.longPositionRatio) * 100;
+        const shrt = Number(last.shortPositionRatio) * 100;
+        if (!isFinite(long) || !isFinite(shrt)) return null;
+        return { longPct: long, shortPct: shrt };
+      }
+      function extractAccRatio(json) {
+        const arr = safeArr(json?.data);
+        if (!arr.length) return null;
+        const last = arr[arr.length - 1];
+        const long = Number(last.longAccountRatio) * 100;
+        const shrt = Number(last.shortAccountRatio) * 100;
+        if (!isFinite(long) || !isFinite(shrt)) return null;
+        return { longPct: long, shortPct: shrt };
+      }
+      function calcOrderbookStats(depthJson, topN) {
+        try {
+          const bids = depthJson?.data?.bids || [];
+          const asks = depthJson?.data?.asks || [];
+          const bn = sumNotional(bids, topN),
+            an = sumNotional(asks, topN);
+          const total = bn + an;
+          const bidPct = total > 0 ? (bn / total) * 100 : null;
+          const askPct = total > 0 ? (an / total) * 100 : null;
+          const bestBid = bids[0] ? Number(bids[0][0]) : null;
+          const bestAsk = asks[0] ? Number(asks[0][0]) : null;
+          let spreadBps = null;
+          if (bestBid != null && bestAsk != null) {
+            const mid = (bestBid + bestAsk) / 2;
+            spreadBps = ((bestAsk - bestBid) / mid) * 10000;
+          }
+          return {
+            bidNotional: bn,
+            askNotional: an,
+            totalNotional: total,
+            bidPct: bidPct == null ? null : Math.round(bidPct * 100) / 100,
+            askPct: askPct == null ? null : Math.round(askPct * 100) / 100,
+            spreadBps:
+              spreadBps == null ? null : Math.round(spreadBps * 100) / 100,
+            mid:
+              bestBid != null && bestAsk != null
+                ? (bestBid + bestAsk) / 2
+                : null,
+          };
+        } catch (e) {
+          return {
+            bidNotional: null,
+            askNotional: null,
+            totalNotional: null,
+            bidPct: null,
+            askPct: null,
+            spreadBps: null,
+            mid: null,
+          };
+        }
+      }
+      function sumNotional(levels, topN) {
+        let s = 0;
+        for (let i = 0; i < Math.min(levels.length, topN); i++) {
+          const px = Number(levels[i][0]),
+            sz = Number(levels[i][1]);
+          if (!isFinite(px) || !isFinite(sz)) continue;
+          s += px * sz;
+        }
+        return s;
+      }
+
+      /* ======================= Visibility optimization ======================= */
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+          if (timer) {
+            clearInterval(timer);
+            timer = null;
+          }
+          $id("status").textContent = "Paused";
+        } else if (!timer) {
+          start();
+        }
+      });
+    </script>
+    <!-- ============================ /SCRIPT ============================ -->
+  </body>
+</html>

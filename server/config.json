@@ -1,0 +1,30 @@
+{
+  "api_key": "bg_403b0957d94fd7649244730a85987e52",
+  "api_secret": "aecbdf0c3b171ace99c9e3ca2ed660bb7df8b8bc2b779e227bf49d8744d24f41",
+  "passphrase": "coinben2025",
+
+  "control_port": 8788,
+  "trade_port": 8789,
+
+  "dry_run": false,
+  "kill_switch": false,
+
+  "whitelist": ["*"],
+
+  "limits": {
+    "rate_per_sec": 5,
+    "max_order_usdt": 50000,
+    "max_position_usdt": 200000
+  },
+
+  "guards": {
+    "max_slippage_bps": 1000,
+    "min_liquidity_usdt": 0,
+    "min_spread_bps": 0,
+    "max_staleness_ms": 600000
+  },
+
+  "dev": {
+    "disable_private_proxy": false
+  }
+}

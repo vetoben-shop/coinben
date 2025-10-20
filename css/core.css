@@ -1,0 +1,227 @@
+/* =========================================================
+   CORE THEME STYLESHEET — Coinben System
+   Global Layout / Typography / Colors / Utilities
+   ========================================================= */
+
+/* ====================== Root Theme Variables ====================== */
+:root {
+  --bg: #0d1117;
+  --panel: #161b22;
+  --line: #2a2f38;
+  --ink: #dcdcdc;
+  --muted: #7d8590;
+  --good: #22c55e;
+  --bad: #ef4444;
+  --warn: #eab308;
+  --accent: #60a5fa;
+  --font: "Segoe UI", Roboto, sans-serif;
+  --radius: 8px;
+  --transition: 0.25s ease;
+}
+
+/* ====================== Base Layout ====================== */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background-color: var(--bg);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+a:hover {
+  color: #93c5fd;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0 0 10px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* ====================== Layout Containers ====================== */
+.container {
+  padding: 20px;
+  max-width: 1920px;
+  margin: 0 auto;
+}
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  color: var(--ink);
+}
+
+/* ====================== Header ====================== */
+.header {
+  background: #11161e;
+  border-bottom: 1px solid var(--line);
+  padding: 10px 20px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.brand .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--good);
+  display: inline-block;
+}
+
+/* ====================== Navigation ====================== */
+.nav {
+  display: flex;
+  gap: 20px;
+}
+.nav a {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 4px 0;
+  transition: color var(--transition);
+}
+.nav a.active {
+  color: var(--accent);
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 2px;
+}
+.nav a:hover {
+  color: var(--ink);
+}
+
+/* ====================== Buttons ====================== */
+button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  padding: 6px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+button:hover {
+  opacity: 0.9;
+}
+button:disabled {
+  background: #374151;
+  cursor: not-allowed;
+}
+
+/* ====================== Pills & Badges ====================== */
+.pill {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.pill .v {
+  margin-left: 6px;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.badge {
+  background: #1e2633;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: 2px 5px;
+  font-size: 12px;
+}
+.badge.small {
+  font-size: 11px;
+  padding: 2px 4px;
+}
+.badge.warn {
+  border-color: var(--warn);
+  color: var(--warn);
+}
+
+/* ====================== Scrollbar ====================== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4a5568;
+}
+
+/* ====================== Utility ====================== */
+.center {
+  text-align: center;
+}
+.right {
+  text-align: right;
+}
+.left {
+  text-align: left;
+}
+
+.none {
+  color: var(--muted);
+}
+.watch {
+  color: var(--accent);
+}
+.strong {
+  color: var(--good);
+}
+
+.blink {
+  animation: blink 1.2s infinite;
+}
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}

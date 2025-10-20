@@ -1,0 +1,84 @@
+실행 안내 (간단)
+
+Python 봇 실행:
+
+pip install aiohttp (권장)
+
+BASE_URL 등 환경 변수 조정 후:
+
+python AutoTradingBot.py
+
+python RiskManagementBot.py
+
+프로덕션 24×7:
+
+pm2 예시:
+
+pm2 start AutoTradingBot.py --name autobot
+
+pm2 start RiskManagementBot.py --name riskbot
+
+원하시면 추가로 환경파일(.env), pm2 에코시스템 파일, 드라이런 스위치, **알림 연동(Webhook)**도 만들어 드립니다.
+
+You said:
+일단 먼저 니가 위에 만든 코드로 실전 매매부터 해보고 생각하자 위 파일들은 어디다 저장해 두면 좋겠어?
+ChatGPT said:
+Thought for 20s
+
+좋아요 Ben. “실전 매매” 기준으로, 지금 만든 파일들을 아래처럼 배치하면 깔끔하고 운영하기 쉽습니다.
+
+권장 폴더 배치 (기존 구조 유지)
+
+D:\bitget\bot\coinben\AutoTradingBot.py
+
+D:\bitget\bot\coinben\RiskManagementBot.py
+
+D:\bitget\bot\coinben\trade.html (그대로)
+
+D:\bitget\bot\coinben\risk.html (그대로)
+
+D:\bitget\bot\coinben\css\trade.css ← 반응형 업그레이드본으로 교체
+
+D:\bitget\bot\coinben\css\risk.css ← 반응형 업그레이드본으로 교체
+
+(기존) server.js, trade.js, gate.js, config.json, package.json 은 모두 coinben 루트 그대로
+
+실행/연동 체크 포인트
+
+Node 서버 베이스 URL 확인
+UI와 봇이 모두 http://127.0.0.1:8788(control) / :8789(trade) 흐름을 사용합니다.
+config.json의 포트 세팅이 현재 pm2 서버와 일치하는지 한 번만 확인하세요.
+
+AutoTradingBot.py 환경값
+실제 운용에 맞춰 봇 프로세스 환경변수만 세팅하면 됩니다.
+
+필수: BASE_URL(예: http://127.0.0.1:8788), SYMBOL(예: BTCUSDT)
+
+전략: SPREAD_PCT, HEDGE_TRIGGER_PCT, ORDER_SIZE, SIZE_TYPE(USDT/COIN)
+
+선물: LEVERAGE, POS_MODE(isolated/cross)
+
+재매수 규칙: REBUY_DROP_PCT(기본 10)
+
+RiskManagementBot.py 환경값
+
+SYMBOL(동일), 모니터링 강도: TOPN, SPREAD_BPS_WARN, DIVERGENCE_PCT_WARN 등
+
+pm2로 24×7 운영
+pm2는 파이썬 프로세스도 관리 가능합니다.
+
+Node 서버는 현재대로 유지
+
+여기에 AutoTradingBot.py, RiskManagementBot.py 두 개 프로세스를 pm2로 추가해 항상 켜두면 됩니다.
+
+실전 투입 전 최소 점검 (아주 중요)
+
+Bitget 키/권한: 실계정·실시장 권한 및 “현물·선물” 권한 활성화 확인.
+
+PolicyGate 한도: config.json의 최대 주문 금액, 초당 주문 수, 세이프모드 설정이 공격적 전략과 충돌하지 않는지 확인.
+
+드라이런 → 실전 전환: 먼저 아주 작은 ORDER_SIZE와 낮은 레버리지로 실 매매 1~2회 검증 후 본 사이즈로 확대.
+
+UI 확인: trade.html 버튼/로그가 봇 주문 결과와 일치해 보이는지 확인.
+
+원하시면, 지금 배치대로 저장했다는 가정 하에 pm2 등록 절차(프로세스 이름, 환경변수 세팅 방식)도 바로 정리해 드릴게요.

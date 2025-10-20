@@ -1,0 +1,889 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1,maximum-scale=1"
+    />
+    <title>Coinben Bot — Main Dashboard</title>
+    <link rel="stylesheet" href="./assets/css/index.css" />
+
+    <!-- ============================ [MOD] Risk 패널 내장용 보조 스타일 ============================ -->
+    <style>
+      /* --- Risk 패널을 대시보드에 직접 표시(왼쪽 50%) --- */
+      .twoCol {
+        display: flex;
+        gap: 16px;
+        margin-top: 16px;
+      }
+      .twoCol .col {
+        flex: 1 1 50%;
+      }
+      .twoCol .left {
+        flex-basis: 50%;
+      }
+      .twoCol .right {
+        flex-basis: 50%;
+      }
+
+      /* iframe 기본 높이 600px, 큰 화면에서 720px */
+      .risk-embed iframe {
+        width: 100%;
+        height: 600px; /* [MOD] 기본 높이 600px */
+        border: 0;
+        border-radius: 12px;
+        background: transparent;
+      }
+      @media (min-width: 1440px) {
+        .risk-embed iframe {
+          height: 720px;
+        } /* [MOD] 큰 화면에서 720px */
+      }
+
+      /* (선택) 어두운 배경과 어울리도록 박스 테두리 */
+      .risk-embed {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 0;
+      }
+    </style>
+    <!-- ============================ /[MOD] ============================ -->
+  </head>
+  <body>
+    <!-- ============================ Header / Nav ============================ -->
+    <div class="header">
+      <div class="header-inner">
+        <div class="brand">
+          <span class="dot"></span>
+          <div>Coinben Bot</div>
+        </div>
+        <nav class="nav">
+          <a class="active" href="./index.html">Dashboard</a>
+          <a href="./risk.html">Risk Bot</a>
+          <a href="./trade.html">Trade Bot</a>
+          <a href="./future4.html">Page 4</a>
+          <a href="./future5.html">Page 5</a>
+        </nav>
+      </div>
+    </div>
+
+    <div class="container">
+      <!-- ============================ Breadth ============================ -->
+      <div class="breadth-wrap">
+        <div class="bcard" id="futCard">
+          <div class="bhead">
+            <div class="btitle">USDT-Futures 전체 — 상승/하락 비중</div>
+            <div class="bctrl">
+              <label style="color: var(--muted); font-size: 12px"
+                >봉 간격</label
+              >
+              <select id="futTf" class="bsel">
+                <option value="1">1분</option>
+                <option value="3">3분</option>
+                <option value="5" selected>5분</option>
+                <option value="10">10분</option>
+                <option value="15">15분</option>
+              </select>
+              <span id="futStatus" class="badge">워밍업</span>
+            </div>
+          </div>
+          <div class="bar">
+            <div id="futUp" class="up" style="width: 0%"></div>
+            <div id="futMid" class="mid" style="width: 0%"></div>
+            <div id="futDn" class="dn" style="width: 0%"></div>
+          </div>
+          <div class="bmetrics" style="margin-top: 8px">
+            <div id="futUpPill" class="pill">
+              상승(%) <span class="v" id="futUpPct">0</span>
+            </div>
+            <div id="futMidPill" class="pill">
+              보합(%) <span class="v" id="futZPct">0</span>
+            </div>
+            <div id="futDnPill" class="pill">
+              하락(%) <span class="v" id="futDnPct">0</span>
+            </div>
+            <div class="pill">
+              상승 심볼 <span class="v" id="futUpCnt">0</span>
+            </div>
+            <div class="pill">
+              보합 심볼 <span class="v" id="futZCnt">0</span>
+            </div>
+            <div class="pill">
+              하락 심볼 <span class="v" id="futDnCnt">0</span>
+            </div>
+            <div class="pill">
+              총 심볼 <span class="v" id="futTotal">0</span>
+            </div>
+          </div>
+          <div class="note">hidden</div>
+        </div>
+
+        <div class="bcard" id="spotCard">
+          <div class="bhead">
+            <div class="btitle">SPOT 전체 — 상승/하락 비중</div>
+            <div class="bctrl">
+              <label style="color: var(--muted); font-size: 12px"
+                >봉 간격</label
+              >
+              <select id="spotTf" class="bsel">
+                <option value="1">1분</option>
+                <option value="3">3분</option>
+                <option value="5" selected>5분</option>
+                <option value="10">10분</option>
+                <option value="15">15분</option>
+              </select>
+              <span id="spotStatus" class="badge">워밍업</span>
+            </div>
+          </div>
+          <div class="bar">
+            <div id="spotUp" class="up" style="width: 0%"></div>
+            <div id="spotMid" class="mid" style="width: 0%"></div>
+            <div id="spotDn" class="dn" style="width: 0%"></div>
+          </div>
+          <div class="bmetrics" style="margin-top: 8px">
+            <div id="spotUpPill" class="pill">
+              상승(%) <span class="v" id="spotUpPct">0</span>
+            </div>
+            <div id="spotMidPill" class="pill">
+              보합(%) <span class="v" id="spotZPct">0</span>
+            </div>
+            <div id="spotDnPill" class="pill">
+              하락(%) <span class="v" id="spotDnPct">0</span>
+            </div>
+            <div class="pill">
+              상승 심볼 <span class="v" id="spotUpCnt">0</span>
+            </div>
+            <div class="pill">
+              보합 심볼 <span class="v" id="spotZCnt">0</span>
+            </div>
+            <div class="pill">
+              하락 심볼 <span class="v" id="spotDnCnt">0</span>
+            </div>
+            <div class="pill">
+              총 심볼 <span class="v" id="spotTotal">0</span>
+            </div>
+          </div>
+          <div class="note">hidden</div>
+        </div>
+      </div>
+      <!-- ============================ /Breadth ============================ -->
+
+      <h1>
+        Long/Short Bias — Positions vs Accounts
+        <span id="periodBadge" class="badge mapInfo">period: <b>5m</b></span>
+        <span id="granBadge" class="badge small"></span>
+      </h1>
+
+      <div class="toolbar">
+        <div>
+          <label>Symbols(콤마):</label>
+          <input
+            id="symInput"
+            type="text"
+            placeholder="예: BTCUSDT,ETHUSDT"
+            value="BTCUSDT"
+          />
+        </div>
+        <div>
+          <label>period:</label>
+          <select id="periodSel">
+            <option value="1m">1m</option>
+            <option value="3m">3m</option>
+            <option value="5m" selected>5m</option>
+            <option value="10m">10m</option>
+            <option value="15m">15m</option>
+          </select>
+        </div>
+        <div>
+          <label>depth:</label>
+          <select id="depthSel">
+            <option value="20">20</option>
+            <option value="50" selected>50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+        <div>
+          <label>주기:</label>
+          <select id="intervalSel">
+            <option value="2000" selected>2s</option>
+            <option value="5000">5s</option>
+            <option value="10000">10s</option>
+          </select>
+        </div>
+        <div class="badge">브랜드: <b>Coinben Bot</b></div>
+        <button id="applyBtn">적용</button>
+        <button id="startBtn">Start</button>
+        <button id="stopBtn">Stop</button>
+        <span id="status" class="badge">대기</span>
+      </div>
+
+      <div class="kpi" id="kpi"></div>
+
+      <div class="tableWrap">
+        <table id="tbl">
+          <thead>
+            <tr>
+              <th>Time</th>
+              <th>Sym</th>
+              <th>Basis</th>
+              <th>FR%</th>
+              <th>Long %</th>
+              <th>Short %</th>
+              <th>OB Bid %</th>
+              <th>OB Ask %</th>
+              <th class="right">OBB$</th>
+              <th class="right">OBA$</th>
+              <th class="right">OBT$</th>
+              <th class="right">OI$</th>
+              <th>MM</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- ============================ [MOD] Risk 패널을 직접 표시(왼쪽 50%), 링크/바로가기 제거 ============================ -->
+      <div class="twoCol">
+        <div class="col left">
+          <div class="risk-embed">
+            <!-- [MOD] risk.html을 그대로 내장 (스크립트 충돌 방지, 유지보수 용이) -->
+            <iframe
+              src="./risk.html"
+              title="Risk Monitor"
+              loading="lazy"
+            ></iframe>
+          </div>
+        </div>
+        <div class="col right">
+          <!-- [RESERVED] 오른쪽 50% 공간: 추후 다른 모듈/설정 UI 삽입 예정 -->
+        </div>
+      </div>
+      <!-- ============================ /[MOD] ============================ -->
+
+      <!-- ============================ [DEL] 하위 페이지 링크 카드 영역 완전 제거 ============================ -->
+      <!-- (기존: 위험 감지 신호 Bot / 자동매매 Bot 링크 카드) -->
+      <!-- ============================ /[DEL] ============================ -->
+    </div>
+
+    <!-- ============================ SCRIPT ============================ -->
+    <script>
+      /* ======================= 설정/상수 ======================= */
+      const PRODUCT_TYPE = "USDT-FUTURES"; // Bitget v2 규격(대문자)
+
+      /* ======================= Breadth(상/보합/하) ======================= */
+      const breadthCfg = {
+        pollMs: 500,
+        sampleEveryMs: 5000,
+        futUrl: (productType) =>
+          `https://api.bitget.com/api/v2/mix/market/tickers?productType=${productType}&_=${Date.now()}`,
+        spotUrl: () =>
+          `https://api.bitget.com/api/v2/spot/market/tickers?_=${Date.now()}`,
+      };
+      const futHist = new Map(),
+        spotHist = new Map();
+      /* 스팟 가격 캐시 */
+      let spotTickerCache = { ts: 0, map: new Map() };
+      let futWindowMin = 5,
+        spotWindowMin = 5;
+
+      document.getElementById("futTf").addEventListener("change", (e) => {
+        futWindowMin = +e.target.value;
+        renderBreadth();
+      });
+      document.getElementById("spotTf").addEventListener("change", (e) => {
+        spotWindowMin = +e.target.value;
+        renderBreadth();
+      });
+
+      function trimHistory(queue, keepMin) {
+        const cutoff = Date.now() - keepMin * 60 * 1000;
+        while (queue.length && queue[0].ts < cutoff) queue.shift();
+      }
+      function boundaryStart(windowMin) {
+        const tf = windowMin * 60 * 1000;
+        const now = Date.now();
+        return Math.floor(now / tf) * tf;
+      }
+      function baseAtOrAfter(queue, t0) {
+        if (!queue || !queue.length) return null;
+        for (let i = 0; i < queue.length; i++) {
+          if (queue[i].ts >= t0) return queue[i].price;
+        }
+        return null;
+      }
+      function baseAtOrBefore(queue, t0) {
+        let base = null;
+        for (let i = queue.length - 1; i >= 0; i--) {
+          if (queue[i].ts <= t0) {
+            base = queue[i].price;
+            break;
+          }
+        }
+        if (base == null && queue.length) base = queue[0].price;
+        return base;
+      }
+
+      function computeCounts(mapHist, windowMin) {
+        const t0 = boundaryStart(windowMin);
+        let up = 0,
+          dn = 0,
+          flat = 0,
+          total = 0;
+        for (const [, q] of mapHist.entries()) {
+          if (!q || q.length < 1) continue;
+          let base = baseAtOrAfter(q, t0);
+          if (base == null) base = baseAtOrBefore(q, t0);
+          const last = q[q.length - 1].price;
+          if (base == null || !isFinite(last)) continue;
+          total++;
+          if (last > base) up++;
+          else if (last < base) dn++;
+          else flat++;
+        }
+        return { up, dn, flat, total };
+      }
+
+      function drawBar(
+        upId,
+        midId,
+        dnId,
+        upPctId,
+        midPctId,
+        dnPctId,
+        upCntId,
+        midCntId,
+        dnCntId,
+        totalId,
+        { up, dn, flat, total },
+      ) {
+        const upPct = total ? Math.round((up / total) * 100) : 0;
+        const midPct = total ? Math.round((flat / total) * 100) : 0;
+        const dnPct = total ? Math.round((dn / total) * 100) : 0;
+
+        const upEl = document.getElementById(upId);
+        const midEl = document.getElementById(midId);
+        const dnEl = document.getElementById(dnId);
+
+        upEl.style.width = upPct + "%";
+        upEl.style.left = "0%";
+        midEl.style.width = midPct + "%";
+        midEl.style.left = upPct + "%";
+        dnEl.style.width = dnPct + "%";
+        dnEl.style.left = upPct + midPct + "%";
+
+        document.getElementById(upPctId).textContent = upPct;
+        document.getElementById(midPctId).textContent = midPct;
+        document.getElementById(dnPctId).textContent = dnPct;
+
+        document.getElementById(upCntId).textContent = up;
+        document.getElementById(midCntId).textContent = flat;
+        document.getElementById(dnCntId).textContent = dn;
+        document.getElementById(totalId).textContent = total;
+      }
+
+      function setPillTitles(
+        prefix,
+        windowMin,
+        status,
+        { up, dn, flat, total },
+      ) {
+        const pct = (n) => (total ? Math.round((n / total) * 100) : 0);
+        const head = `총=${total} · 분창=${windowMin}분 · 상태=${status}`;
+        document.getElementById(prefix + "UpPill").title =
+          `상승: (상승/총)×100\n${head}\n현재 ${up}개, ${pct(up)}%`;
+        document.getElementById(prefix + "MidPill").title =
+          `보합: (보합/총)×100\n${head}\n현재 ${flat}개, ${pct(flat)}%`;
+        document.getElementById(prefix + "DnPill").title =
+          `하락: (하락/총)×100\n${head}\n현재 ${dn}개, ${pct(dn)}%`;
+      }
+
+      function renderBreadth() {
+        const fut = computeCounts(futHist, futWindowMin);
+        const spot = computeCounts(spotHist, spotWindowMin);
+        drawBar(
+          "futUp",
+          "futMid",
+          "futDn",
+          "futUpPct",
+          "futZPct",
+          "futDnPct",
+          "futUpCnt",
+          "futZCnt",
+          "futDnCnt",
+          "futTotal",
+          fut,
+        );
+        drawBar(
+          "spotUp",
+          "spotMid",
+          "spotDn",
+          "spotUpPct",
+          "spotZPct",
+          "spotDnPct",
+          "spotUpCnt",
+          "spotZCnt",
+          "spotDnCnt",
+          "spotTotal",
+          spot,
+        );
+        setPillTitles(
+          "fut",
+          futWindowMin,
+          document.getElementById("futStatus").textContent,
+          fut,
+        );
+        setPillTitles(
+          "spot",
+          spotWindowMin,
+          document.getElementById("spotStatus").textContent,
+          spot,
+        );
+      }
+
+      function updateSpotTickerCache(arr) {
+        const m = new Map();
+        for (const t of arr || []) {
+          const sym = String(t.symbol || t.instId || "").toUpperCase();
+          const px = Number(
+            t.lastPr ?? t.last ?? t.close ?? t.lastPrice ?? t.closePrice,
+          );
+          if (!sym || !isFinite(px)) continue;
+          m.set(sym, px);
+        }
+        spotTickerCache = { ts: Date.now(), map: m };
+      }
+      async function pollBreadth() {
+        try {
+          const [fut, spot] = await Promise.allSettled([
+            fetchJSON(breadthCfg.futUrl(PRODUCT_TYPE)),
+            fetchJSON(breadthCfg.spotUrl()),
+          ]);
+          const now = Date.now();
+
+          if (ok(fut) && Array.isArray(fut.value?.data)) {
+            for (const t of fut.value.data) {
+              const sym = String(t.symbol || t.instId || "").toUpperCase();
+              const px = Number(
+                t.lastPr ?? t.last ?? t.close ?? t.lastPrice ?? t.closePrice,
+              );
+              if (!sym || !isFinite(px)) continue;
+              if (!futHist.has(sym)) futHist.set(sym, []);
+              const q = futHist.get(sym);
+              q.push({ ts: now, price: px });
+              trimHistory(q, Math.max(20, futWindowMin * 6));
+            }
+            document.getElementById("futStatus").textContent = "업데이트";
+          } else {
+            document.getElementById("futStatus").textContent = "오류/워밍업";
+          }
+
+          if (ok(spot) && Array.isArray(spot.value?.data)) {
+            updateSpotTickerCache(spot.value.data);
+            for (const t of spot.value.data) {
+              const sym = String(t.symbol || t.instId || "").toUpperCase();
+              const px = Number(
+                t.lastPr ?? t.last ?? t.close ?? t.lastPrice ?? t.closePrice,
+              );
+              if (!sym || !isFinite(px)) continue;
+              if (!spotHist.has(sym)) spotHist.set(sym, []);
+              const q = spotHist.get(sym);
+              q.push({ ts: now, price: px });
+              trimHistory(q, Math.max(20, spotWindowMin * 6));
+            }
+            document.getElementById("spotStatus").textContent = "업데이트";
+          } else {
+            document.getElementById("spotStatus").textContent = "오류/워밍업";
+          }
+
+          renderBreadth();
+        } catch (e) {
+          document.getElementById("futStatus").textContent = "오류";
+          document.getElementById("spotStatus").textContent = "오류";
+          console.error("breadth poll error", e);
+        } finally {
+          setTimeout(pollBreadth, breadthCfg.pollMs);
+        }
+      }
+
+      /* ======================= 하단 표 / 기존 로직 유지 ======================= */
+      const DEPTH_PRECISION = "scale0";
+      function ok(p) {
+        return p.status === "fulfilled";
+      }
+      function mapPeriodForLS(p) {
+        return p === "10m" ? "15m" : p === "1m" || p === "3m" ? "5m" : p;
+      }
+      function updateBadges(uiP) {
+        const mapped = mapPeriodForLS(uiP);
+        document.getElementById("periodBadge").innerHTML =
+          `period: <b>${mapped}</b>`;
+        const g = document.getElementById("granBadge");
+        g.textContent = uiP !== mapped ? `요청 ${uiP}→호출 ${mapped}` : "";
+        g.className = "badge small " + (uiP !== mapped ? "warn" : "");
+      }
+      const nf0 = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+      const nf2 = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
+      const pf2 = (x) => (x == null ? "-" : nf2.format(x) + "%");
+      let timer = null,
+        aborter = null;
+      const $id = (id) => document.getElementById(id);
+      $id("applyBtn").onclick = () => updateBadges($id("periodSel").value);
+      $id("startBtn").onclick = start;
+      $id("stopBtn").onclick = stop;
+      updateBadges($id("periodSel").value);
+
+      /* 자동 시작: Breadth */
+      pollBreadth();
+
+      /* Futures tickers 캐시 */
+      let futTickerCache = { ts: 0, map: new Map(), lastPrice: new Map() };
+      async function loadFuturesTickers() {
+        try {
+          const j = await fetchJSON(breadthCfg.futUrl(PRODUCT_TYPE));
+          const m = new Map(),
+            lp = new Map();
+          for (const t of j?.data || []) {
+            const sym = String(t.symbol || "").toUpperCase();
+            const fr = Number(t.fundingRate ?? t.fundingRateE8 ?? NaN);
+            const px = Number(
+              t.lastPr ?? t.last ?? t.close ?? t.lastPrice ?? t.closePrice,
+            );
+            m.set(sym, Number.isFinite(fr) ? fr * 100 : null);
+            if (isFinite(px)) lp.set(sym, px);
+          }
+          futTickerCache = { ts: Date.now(), map: m, lastPrice: lp };
+        } catch (e) {
+          futTickerCache = {
+            ts: Date.now(),
+            map: new Map(),
+            lastPrice: new Map(),
+          };
+        }
+      }
+      function getFundingPct(sym) {
+        return futTickerCache.map.get(sym.toUpperCase());
+      }
+      function getFutLast(sym) {
+        return futTickerCache.lastPrice.get(sym.toUpperCase()) ?? null;
+      }
+      function getSpotLast(sym) {
+        return spotTickerCache.map.get(sym.toUpperCase()) ?? null;
+      }
+
+      function start() {
+        stop();
+        const iv = parseInt($id("intervalSel").value, 10);
+        fetchAndRender();
+        timer = setInterval(fetchAndRender, iv);
+        $id("status").textContent = "요청 중...";
+      }
+      function stop() {
+        if (timer) {
+          clearInterval(timer);
+          timer = null;
+        }
+        if (aborter) {
+          aborter.abort();
+          aborter = null;
+        }
+        $id("status").textContent = "대기";
+      }
+
+      /* 데이터 로드 & 렌더 */
+      async function fetchAndRender() {
+        const syms = $id("symInput")
+          .value.split(",")
+          .map((s) => s.trim().toUpperCase())
+          .filter(Boolean);
+        const periodUI = $id("periodSel").value;
+        const period = mapPeriodForLS(periodUI);
+        const depthN = parseInt($id("depthSel").value, 10);
+        const useOI = true;
+
+        aborter = new AbortController();
+        const rows = [];
+        const kpi = { cnt: 0, totalOI: 0, strong: 0, watch: 0, nodata: 0 };
+
+        if (Date.now() - futTickerCache.ts > 10000) {
+          await loadFuturesTickers();
+        }
+
+        for (const symbol of syms) {
+          try {
+            const [pos, acc] = await Promise.allSettled([
+              getPositionLongShort(symbol, period, aborter.signal),
+              getAccountLongShort(symbol, period, aborter.signal),
+            ]);
+            const posRat = extractPosRatio(ok(pos) ? pos.value : null);
+            const accRat = extractAccRatio(ok(acc) ? acc.value : null);
+
+            const depth = await getMergeDepth(symbol, depthN, aborter.signal);
+            const ob = calcOrderbookStats(depth, depthN);
+
+            let oiUSDT = null;
+            try {
+              const oi = await getOpenInterest(symbol, aborter.signal);
+              oiUSDT = Number(
+                oi?.data?.[0]?.amount || oi?.data?.[0]?.openInterest || null,
+              );
+            } catch (e) {}
+
+            const now = new Date().toLocaleString();
+            const fundingPct = getFundingPct(symbol);
+
+            const posSignal = judgeMM({
+              spreadBps: ob.spreadBps,
+              obBidPct: ob.bidPct,
+              longPct: posRat?.longPct ?? null,
+              oiUSDT,
+            });
+            const accSignal = judgeMM({
+              spreadBps: ob.spreadBps,
+              obBidPct: ob.bidPct,
+              longPct: accRat?.longPct ?? null,
+              oiUSDT,
+            });
+
+            const noPos = posRat == null,
+              noAcc = accRat == null;
+            if (noPos) posSignal.level = "데이터없음";
+            if (noAcc) accSignal.level = "데이터없음";
+            if (noPos && noAcc) kpi.nodata++;
+
+            rows.push({
+              groupHead: true,
+              ts: now,
+              symbol,
+              basis: "Positions",
+              funding: fundingPct,
+              longPct: posRat?.longPct ?? null,
+              shortPct: posRat?.shortPct ?? null,
+              obBidPct: ob.bidPct,
+              obAskPct: ob.askPct,
+              obBidNotional: ob.bidNotional,
+              obAskNotional: ob.askNotional,
+              obTotalNotional: ob.totalNotional,
+              oiUSDT,
+              signal: posSignal,
+            });
+            rows.push({
+              groupHead: false,
+              ts: now,
+              symbol,
+              basis: "Accounts",
+              funding: fundingPct,
+              longPct: accRat?.longPct ?? null,
+              shortPct: accRat?.shortPct ?? null,
+              obBidPct: ob.bidPct,
+              obAskPct: ob.askPct,
+              obBidNotional: ob.bidNotional,
+              obAskNotional: ob.askNotional,
+              obTotalNotional: ob.totalNotional,
+              oiUSDT,
+              signal: accSignal,
+            });
+
+            kpi.cnt++;
+            if (oiUSDT) kpi.totalOI += oiUSDT;
+            const levelRank = { 없음: 0, 관심: 1, 강함: 2 };
+            const maxLevel =
+              levelRank[posSignal.level] >= levelRank[accSignal.level]
+                ? posSignal.level
+                : accSignal.level;
+            if (maxLevel === "강함") kpi.strong++;
+            if (maxLevel === "관심") kpi.watch++;
+
+            $id("status").textContent = "업데이트 완료";
+          } catch (err) {
+            console.error(symbol, err);
+            $id("status").textContent = "오류 발생(콘솔 참조)";
+          }
+        }
+        render(rows);
+        renderKPI(kpi);
+      }
+
+      function render(rows) {
+        const tbody = $id("tbody");
+        const nf0s = (v) => (v != null ? nf0.format(v) : "-");
+        tbody.innerHTML = rows
+          .map(
+            (r) => `
+    <tr class='${r.groupHead ? "groupHead" : ""}'>
+      <td>${r.ts}</td>
+      <td>${r.symbol}</td>
+      <td class='center'>${r.basis}</td>
+      <td>${
+        r.funding == null || !isFinite(r.funding)
+          ? "-"
+          : (Math.abs(r.funding) < 1e-8
+              ? "0"
+              : (r.funding > 0 ? "+" : "") + nf2.format(r.funding)) + "%"
+      }</td>
+      <td>${r.longPct == null ? "-" : pf2(r.longPct)}</td>
+      <td>${r.shortPct == null ? "-" : pf2(r.shortPct)}</td>
+      <td>${r.obBidPct == null ? "-" : pf2(r.obBidPct)}</td>
+      <td>${r.obAskPct == null ? "-" : pf2(r.obAskPct)}</td>
+      <td class='right'>${nf0s(r.obBidNotional)}</td>
+      <td class='right'>${nf0s(r.obAskNotional)}</td>
+      <td class='right'>${nf0s(r.obTotalNotional)}</td>
+      <td class='right'>${nf0s(r.oiUSDT)}</td>
+      <td class='signal'>${r.signal.level}</td>
+    </tr>
+  `,
+          )
+          .join("");
+      }
+
+      function renderKPI({ cnt, totalOI, strong, watch, nodata }) {
+        document.getElementById("kpi").innerHTML = `
+    <div class='pill'>심볼 수 <span class='v'>${cnt}</span></div>
+    <div class='pill'>강함 <span class='v' style='color:var(--good)'>${strong}</span></div>
+    <div class='pill'>관심 <span class='v' style='color:#60a5fa'>${watch}</span></div>
+    <div class='pill'>총 OI(USDT) <span class='v'>${new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(totalOI || 0)}</span></div>
+    <div class='pill' title='롱/숏 API가 빈 응답을 반환한 심볼 수'>데이터없음 <span class='v'>${nodata}</span></div>
+  `;
+      }
+
+      /* MM 휴리스틱 */
+      function judgeMM({ spreadBps, obBidPct, longPct, oiUSDT }) {
+        let score = 0;
+        if (spreadBps !== null && spreadBps <= 2) score++;
+        if (obBidPct !== null && obBidPct >= 45 && obBidPct <= 55) score++;
+        if (longPct !== null && longPct >= 47 && longPct <= 53) score++;
+        if (oiUSDT !== null && oiUSDT >= 10_000_000) score++;
+        if (score >= 4) return { level: "강함", cls: "strong" };
+        if (score >= 2) return { level: "관심", cls: "watch" };
+        return { level: "없음", cls: "none" };
+      }
+
+      /* API 헬퍼 */
+      async function getPositionLongShort(symbol, period, signal) {
+        const url = new URL(
+          "https://api.bitget.com/api/v2/mix/market/position-long-short",
+        );
+        url.searchParams.set("symbol", symbol);
+        url.searchParams.set("period", period);
+        return fetchJSON(url.toString(), { signal });
+      }
+      async function getAccountLongShort(symbol, period, signal) {
+        const url = new URL(
+          "https://api.bitget.com/api/v2/mix/market/account-long-short",
+        );
+        url.searchParams.set("symbol", symbol);
+        url.searchParams.set("period", period);
+        return fetchJSON(url.toString(), { signal });
+      }
+      async function getMergeDepth(symbol, limit, signal) {
+        const url = new URL(
+          "https://api.bitget.com/api/v2/mix/market/merge-depth",
+        );
+        url.searchParams.set("productType", PRODUCT_TYPE);
+        url.searchParams.set("symbol", symbol);
+        url.searchParams.set("precision", "scale0");
+        url.searchParams.set("limit", String(limit));
+        return fetchJSON(url.toString(), { signal });
+      }
+      async function getOpenInterest(symbol, signal) {
+        const url = new URL(
+          "https://api.bitget.com/api/v2/mix/market/open-interest",
+        );
+        url.searchParams.set("productType", PRODUCT_TYPE);
+        url.searchParams.set("symbol", symbol);
+        return fetchJSON(url.toString(), { signal });
+      }
+      async function fetchJSON(url, opt) {
+        const res = await fetch(url, opt);
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      }
+      function safeArr(d) {
+        return Array.isArray(d) ? d : [];
+      }
+      function extractPosRatio(json) {
+        const arr = safeArr(json?.data);
+        if (!arr.length) return null;
+        const last = arr[arr.length - 1];
+        const long = Number(last.longPositionRatio) * 100;
+        const shrt = Number(last.shortPositionRatio) * 100;
+        if (!isFinite(long) || !isFinite(shrt)) return null;
+        return { longPct: long, shortPct: shrt };
+      }
+      function extractAccRatio(json) {
+        const arr = safeArr(json?.data);
+        if (!arr.length) return null;
+        const last = arr[arr.length - 1];
+        const long = Number(last.longAccountRatio) * 100;
+        const shrt = Number(last.shortAccountRatio) * 100;
+        if (!isFinite(long) || !isFinite(shrt)) return null;
+        return { longPct: long, shortPct: shrt };
+      }
+      function calcOrderbookStats(depthJson, topN) {
+        try {
+          const bids = depthJson?.data?.bids || [];
+          const asks = depthJson?.data?.asks || [];
+          const bn = sumNotional(bids, topN),
+            an = sumNotional(asks, topN);
+          const total = bn + an;
+          const bidPct = total > 0 ? (bn / total) * 100 : null;
+          const askPct = total > 0 ? (an / total) * 100 : null;
+          const bestBid = bids[0] ? Number(bids[0][0]) : null;
+          const bestAsk = asks[0] ? Number(asks[0][0]) : null;
+          let spreadBps = null;
+          if (bestBid != null && bestAsk != null) {
+            const mid = (bestBid + bestAsk) / 2;
+            spreadBps = ((bestAsk - bestBid) / mid) * 10000;
+          }
+          return {
+            bidNotional: bn,
+            askNotional: an,
+            totalNotional: total,
+            bidPct: bidPct == null ? null : Math.round(bidPct * 100) / 100,
+            askPct: askPct == null ? null : Math.round(askPct * 100) / 100,
+            spreadBps:
+              spreadBps == null ? null : Math.round(spreadBps * 100) / 100,
+            mid:
+              bestBid != null && bestAsk != null
+                ? (bestBid + bestAsk) / 2
+                : null,
+          };
+        } catch (e) {
+          return {
+            bidNotional: null,
+            askNotional: null,
+            totalNotional: null,
+            bidPct: null,
+            askPct: null,
+            spreadBps: null,
+            mid: null,
+          };
+        }
+      }
+      function sumNotional(levels, topN) {
+        let s = 0;
+        for (let i = 0; i < Math.min(levels.length, topN); i++) {
+          const px = Number(levels[i][0]),
+            sz = Number(levels[i][1]);
+          if (!isFinite(px) || !isFinite(sz)) continue;
+          s += px * sz;
+        }
+        return s;
+      }
+
+      /* 탭 비가시 상태 최적화 */
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+          if (timer) {
+            clearInterval(timer);
+            timer = null;
+          }
+          document.getElementById("status").textContent = "일시 정지";
+        } else if (!timer) {
+          start();
+        }
+      });
+    </script>
+    <!-- ============================ /SCRIPT ============================ -->
+  </body>
+</html>

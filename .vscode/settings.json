@@ -1,0 +1,99 @@
+{
+  // ==== Formatting (Prettier) ====
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": true,
+
+  // ==== Auto Save ====
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000,
+
+  // ==== On Save: 린트/자동수정/임포트 정리 ====
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "explicit",
+    "source.fixAll.stylelint": "explicit"
+  },
+
+  // ==== ESLint ====
+  "eslint.enable": true,
+  "eslint.format.enable": true,
+  "eslint.codeActionsOnSave.mode": "all",
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+
+  // ==== 공백/개행 정리 ====
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+
+  // ==== 괄호/따옴표 자동 처리 & 가독성 ====
+  "editor.autoClosingBrackets": "always",
+  "editor.autoClosingQuotes": "always",
+  "editor.autoSurround": "quotes",
+  "editor.bracketPairColorization.enabled": true,
+  "editor.guides.bracketPairs": "active",
+
+  // ==== 태그 자동 닫힘/이름 동시 변경 (해당 확장 필요) ====
+  "auto-close-tag.enable": true,
+  "auto-rename-tag.activationOnLanguage": [
+    "html",
+    "xml",
+    "php",
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact",
+    "vue",
+    "liquid"
+  ],
+
+  // ==== Error Lens (줄 안에서 오류 강조) ====
+  "errorLens.enabled": true,
+  "errorLens.delay": 300,
+
+  // ====== 언어별 포맷터 고정 ======
+  "[javascript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[javascriptreact]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[typescript]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[typescriptreact]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[html]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[css]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[scss]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[json]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[markdown]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+  "[liquid]": { "editor.defaultFormatter": "esbenp.prettier-vscode" },
+
+  // ====== CSS 검사: Stylelint 사용 (VS Code 기본 검사 끄기) ======
+  "css.validate": false,
+  "less.validate": false,
+  "scss.validate": false,
+  "stylelint.validate": ["css", "scss"],
+
+  // ====== Python: Black 포맷 + 임포트 정리 ======
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.formatOnSave": true
+  },
+  "python.analysis.typeCheckingMode": "basic",
+
+  // ====== 추천 확장 (extensions.json 기능 병합) ======
+  "extensions.recommendations": [
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "stylelint.vscode-stylelint",
+    "usernamehw.errorlens",
+    "formulahendry.auto-close-tag",
+    "formulahendry.auto-rename-tag",
+    "sissel.shopify-liquid",
+    "ms-python.python",
+    "ms-python.black-formatter",
+    "ms-python.isort",
+    "ms-python.vscode-pylance",
+    "DavidAnson.vscode-markdownlint",
+    "streetsidesoftware.code-spell-checker"
+  ]
+}
